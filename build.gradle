@@ -1,0 +1,62 @@
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+    dependencies {
+        classpath 'com.gradle.publish:plugin-publish-plugin:0.9.7'
+    }
+}
+
+plugins {
+    id 'com.github.hierynomus.license' version '0.14.0'
+}
+apply plugin: 'com.gradle.plugin-publish'
+apply plugin: 'groovy'
+apply plugin: 'maven-publish'
+
+group 'io.github.spencerpark'
+version '1.0.0'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.0'
+}
+
+license {
+    include '**/*.groovy'
+    header = rootProject.file('LICENSE')
+    strictCheck true
+}
+build.dependsOn licenseFormat
+
+repositories {
+    mavenLocal()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/SpencerPark/Jupyter-kernel-installer-gradle'
+    vcsUrl = 'https://github.com/SpencerPark/Jupyter-kernel-installer-gradle'
+    description = 'A Jupyter kernel packager and installer.'
+    tags = ['jupyter', 'kernel', 'installer']
+
+    plugins {
+        jupyterKernelInstaller {
+            id = 'io.github.spencerpark.jupyter-kernel-installer'
+            displayName = 'Jupyter kernel installer'
+        }
+    }
+}
