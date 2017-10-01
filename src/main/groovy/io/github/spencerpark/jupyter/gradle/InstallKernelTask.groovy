@@ -34,8 +34,6 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
 class InstallKernelTask extends DefaultTask {
-    private static final String KERNELSPEC_TEMPLATE_PATH = '/kernel.json.template'
-
     // -------------------------------------------------------------
     // Task inputs
     // -------------------------------------------------------------
@@ -146,18 +144,9 @@ class InstallKernelTask extends DefaultTask {
     }
 
     private void writeKernelSpec() {
-        String compiledSpec
+        KernelSpec spec = new KernelSpec(getInstalledKernelJar(), getKernelDisplayName(), getKernelLanguage())
 
-        TemplateEngine templateEngine = new SimpleTemplateEngine()
-        InstallKernelTask.class.getResourceAsStream(KERNELSPEC_TEMPLATE_PATH).withReader('UTF-8') {
-            template ->
-                compiledSpec = templateEngine.createTemplate(template).make(
-                        KERNEL_JAR_PATH: getInstalledKernelJar().absolutePath,
-                        KERNEL_DISPLAY_NAME: getKernelDisplayName(),
-                        KERNEL_LANGUAGE: getKernelLanguage()
-                )
-        }
         File kernelSpec = new File(getKernelDirectory(), 'kernel.json')
-        kernelSpec.text = compiledSpec
+        kernelSpec.text = spec.toString()
     }
 }

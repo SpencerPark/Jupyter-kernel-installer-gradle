@@ -10,6 +10,8 @@ That project has an example kernel implementation (including usage with this plu
 
 ### Using the plugin
 
+**Requires Gradle `>=4.0`**
+
 Add the following block to the project's `build.gradle`
 
 ##### Gradle < 2.1
@@ -22,7 +24,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.0.0"
+    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.0.1"
   }
 }
 
@@ -33,7 +35,7 @@ apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
 
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "1.0.0"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "1.0.1"
 }
 ```
 
