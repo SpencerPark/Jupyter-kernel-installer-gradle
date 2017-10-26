@@ -23,8 +23,6 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
-import groovy.text.SimpleTemplateEngine
-import groovy.text.TemplateEngine
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
@@ -134,7 +132,6 @@ class InstallKernelTask extends DefaultTask {
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        project.delete(getKernelDirectory().listFiles())
         writeKernelSpec()
         project.copy {
             from getKernelResources()
