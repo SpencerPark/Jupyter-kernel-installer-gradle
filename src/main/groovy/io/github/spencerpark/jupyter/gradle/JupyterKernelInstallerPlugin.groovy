@@ -40,6 +40,7 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
 
                 kernelDisplayName = kernelProps.kernelDisplayNameProvider
                 kernelLanguage = kernelProps.kernelLanguageProvider
+                kernelEnv = kernelProps.kernelEnvProvider
 
                 kernelExecutable = kernelProps.kernelExecutableProvider
                 kernelResources = kernelProps.kernelResources

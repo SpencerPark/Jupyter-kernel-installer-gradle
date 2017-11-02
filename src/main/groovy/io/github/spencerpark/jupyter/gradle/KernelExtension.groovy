@@ -23,6 +23,7 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
+import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
@@ -34,6 +35,7 @@ import org.gradle.api.tasks.bundling.Jar
 class KernelExtension {
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
+    private final PropertyState<Map<String, String>> _kernelEnv
 
     private final PropertyState<File> _kernelExecutable
     private final ConfigurableFileCollection _kernelResources
@@ -46,6 +48,9 @@ class KernelExtension {
 
         _kernelLanguage = project.property(String.class)
         _kernelLanguage.set(project.name)
+
+        _kernelEnv = project.property(Map.class)
+        _kernelEnv.set([:])
 
         _kernelExecutable = project.property(File.class)
         _kernelExecutable.set(project.provider {
@@ -85,6 +90,27 @@ class KernelExtension {
 
     void setKernelLanguage(String kernelLanguage) {
         this._kernelLanguage.set(kernelLanguage)
+    }
+
+
+    Map<String, String> getKernelEnv() {
+        return this._kernelEnv.get()
+    }
+
+    Provider<Map<String, String>> getKernelEnvProvider() {
+        return this._kernelEnv
+    }
+
+    void setKernelEnv(Map<String, String> kernelEnv) {
+        this._kernelEnv.set(kernelEnv)
+    }
+
+    void kernelEnv(Map<String, String> kernelEnv) {
+        this.getKernelEnv().putAll(kernelEnv)
+    }
+
+    void kernelEnv(Action<? super Map<String, String>> kernelEnvAction) {
+        kernelEnvAction.execute(this.getKernelEnv())
     }
 
 

@@ -38,9 +38,10 @@ class InstallKernelTask extends DefaultTask {
 
     private final PropertyState<String> _kernelDisplayName = project.property(String.class)
     private final PropertyState<String> _kernelLanguage = project.property(String.class)
+    private final PropertyState<Map<String, String>> _kernelEnv = project.property(Map.class)
 
     private final PropertyState<File> _kernelExecutable = project.property(File.class)
-    private final ConfigurableFileCollection _kernelResources =  project.files()
+    private final ConfigurableFileCollection _kernelResources = project.files()
 
 
     @Input
@@ -69,6 +70,21 @@ class InstallKernelTask extends DefaultTask {
     void setKernelLanguage(Provider<String> kernelLanguage) {
         this._kernelLanguage.set(kernelLanguage)
     }
+
+
+    @Input
+    Map<String, String> getKernelEnv() {
+        return this._kernelEnv.get()
+    }
+
+    void setKernelEnv(Map<String, String> kernelEnv) {
+        this._kernelEnv.set(kernelEnv)
+    }
+
+    void setKernelEnv(Provider<Map<String, String>> kernelEnv) {
+        this._kernelEnv.set(kernelEnv)
+    }
+
 
     @InputFile
     File getKernelExecutable() {
@@ -141,7 +157,7 @@ class InstallKernelTask extends DefaultTask {
     }
 
     private void writeKernelSpec() {
-        KernelSpec spec = new KernelSpec(getInstalledKernelJar(), getKernelDisplayName(), getKernelLanguage())
+        KernelSpec spec = new KernelSpec(getInstalledKernelJar(), getKernelDisplayName(), getKernelLanguage(), getKernelEnv())
 
         File kernelSpec = new File(getKernelDirectory(), 'kernel.json')
         kernelSpec.text = spec.toString()

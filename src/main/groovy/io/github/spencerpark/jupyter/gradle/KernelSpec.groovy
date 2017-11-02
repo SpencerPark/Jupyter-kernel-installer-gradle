@@ -23,8 +23,7 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
-import groovy.text.SimpleTemplateEngine
-import groovy.text.TemplateEngine
+import groovy.json.JsonOutput
 
 class KernelSpec {
     private static final String KERNELSPEC_TEMPLATE_PATH = '/kernel.json.template'
@@ -34,24 +33,22 @@ class KernelSpec {
     private final File installedKernelJar
     private final String kernelDisplayName
     private final String kernelLanguage
+    private final Map<String, String> kernelEnvironment
 
-    KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage) {
+    KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage, Map<String, String> kernelEnvironment) {
         this.installedKernelJar = installedKernelJar
         this.kernelDisplayName = kernelDisplayName
         this.kernelLanguage = kernelLanguage
+        this.kernelEnvironment = kernelEnvironment
 
-        String compiledSpec = ""
-        TemplateEngine templateEngine = new SimpleTemplateEngine()
-        InstallKernelTask.class.getResourceAsStream(KERNELSPEC_TEMPLATE_PATH).withReader('UTF-8') {
-            template ->
-                compiledSpec = templateEngine.createTemplate(template).make(
-                        KERNEL_JAR_PATH: getInstalledKernelJar().absolutePath.toString().replace(File.separatorChar, '/' as char),
-                        KERNEL_DISPLAY_NAME: getKernelDisplayName(),
-                        KERNEL_LANGUAGE: getKernelLanguage()
+        this.compiledSpec = JsonOutput.prettyPrint(
+                JsonOutput.toJson(
+                        argv: ['java', '-jar', getInstalledKernelJar().absolutePath.toString().replace(File.separatorChar, '/' as char), '{connection_file}'],
+                        display_name: getKernelDisplayName(),
+                        language: getKernelLanguage(),
+                        env: getKernelEnv()
                 )
-        }
-
-        this.compiledSpec = compiledSpec
+        )
     }
 
     File getInstalledKernelJar() {
@@ -64,6 +61,10 @@ class KernelSpec {
 
     String getKernelLanguage() {
         return kernelLanguage
+    }
+
+    Map<String, String> getKernelEnv() {
+        return kernelEnvironment
     }
 
     @Override
