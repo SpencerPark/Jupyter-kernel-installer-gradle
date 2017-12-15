@@ -32,6 +32,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class KernelExtension {
@@ -109,6 +110,10 @@ class KernelExtension {
 
     void kernelEnv(Map<String, String> kernelEnv) {
         this.getKernelEnv().putAll(kernelEnv)
+    }
+
+    void kernelEnv(@DelegatesTo(value = Map.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.getKernelEnv())
     }
 
     void kernelEnv(Action<? super Map<String, String>> kernelEnvAction) {

@@ -14,7 +14,7 @@ That project has an example kernel implementation (including usage with this plu
 
 Add the following block to the project's `build.gradle`
 
-##### Gradle < 2.1
+##### The old way
 
 ```gradle
 buildscript {
@@ -24,32 +24,33 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.0.1"
+    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.1.1"
   }
 }
 
 apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
 ```
 
-##### Gradle >= 2.1
+##### The new way
 
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "1.0.1"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "1.1.1"
 }
 ```
 
-##### Configure the kernelspec
+## Configuration options
 
-| **property**      | **type**       | **default**             | **description**                                                                         |
-|-------------------|----------------|-------------------------|-----------------------------------------------------------------------------------------|
-| kernelDisplayName | String         | `project.name`          | The display name of the kernel                                                          |
-| kernelLanguage    | String         | `project.name`          | The name of the language that the kernel can execute code in                            |
-| kernelExecutable  | File           | `jar.archivePath`       | The build output that must be invoked to start the kernel                               |
-| kernelResources   | FileCollection | `kernel` directory      | The resources that should be included with the kernel such as `kernel.js` or icon files |
-| kernelInstallPath | File           | `"$USER_HOME/.ipython"` | The path to a Jupyter data path directory                                               |
+| **property**      | **type**            | **default**             | **description**                                                                    |
+|-------------------|---------------------|-------------------------|------------------------------------------------------------------------------------|
+| kernelDisplayName | String              | `project.name`          | The display name of the kernel                                                     |
+| kernelLanguage    | String              | `project.name`          | The name of the language that the kernel can execute code in                       |
+| kernelEnv         | Map<String, String> | `[:]`                   | Environment variable names and values that a kernel may use for configuration      |
+| kernelExecutable  | File                | `jar.archivePath`       | The build output that must be invoked to start the kernel                          |
+| kernelResources   | FileCollection      | `kernel` directory      | The resources that should be included with the kernel such as a `kernel.js`        |
+| kernelInstallPath | File                | `"$USER_HOME/.ipython"` | The path to a Jupyter data path directory                                          |
 
-These properties are configured in the `jupyter` extension.
+These properties are configured in the `jupyter` extension at the top level of the build script.
 
 ```gradle
 jupyter {
@@ -58,10 +59,20 @@ jupyter {
 }
 ```
 
-### Run the installer
+## Tasks
 
-The plugin includes an install task called `installKernel` which may be executed via
+Try to use the `jupyter` extension defined above as it will configure all tasks and only use the below options when the configuration must be local.
 
-```bash
-gradle installKernel
-```
+### `installKernel`
+>   Locally install the kernel.
+
+**Options:**
+*   `kernelInstallProps` configure the kernel properties (`kernelDisplayName`, `kernelLanguage`, `kernelEnv`, `kernelExecutable`, `kernelResources`) locally so they only affect this task.
+*   `kernelInstallPath` set the install path from the default `"$USER_HOME/.ipython"` for this task
+
+### `zipKernel`
+>   `Create a zip with the kernel files.`
+
+**Options:**
+*   `kernelInstallProps` configure the kernel properties (`kernelDisplayName`, `kernelLanguage`, `kernelEnv`, `kernelExecutable`, `kernelResources`) locally so they only affect this task.
+*   All options defined for the base `Zip` tasks (such as `archiveName`, `zip64`, `entryCompression`, etc.)

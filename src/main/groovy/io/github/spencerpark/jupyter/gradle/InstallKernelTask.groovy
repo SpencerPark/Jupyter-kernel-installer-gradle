@@ -33,6 +33,7 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class InstallKernelTask extends DefaultTask {
@@ -50,8 +51,15 @@ class InstallKernelTask extends DefaultTask {
         return this._kernelInstallProps
     }
 
-    void kernelInstallProps(Action<? extends KernelInstallProperties> configure) {
+    InstallKernelTask kernelInstallProps(
+            @DelegatesTo(value = KernelInstallProperties.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this._kernelInstallProps)
+        return this
+    }
+
+    InstallKernelTask kernelInstallProps(Action<? super KernelInstallProperties> configure) {
         configure.execute(this._kernelInstallProps)
+        return this
     }
 
 

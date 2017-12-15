@@ -31,6 +31,7 @@ import org.gradle.api.internal.file.collections.MapFileTree
 import org.gradle.api.internal.file.copy.CopySpecInternal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class ZipKernelTask extends Zip {
@@ -77,7 +78,14 @@ class ZipKernelTask extends Zip {
         return this._kernelInstallProps
     }
 
-    void kernelInstallProps(Action<KernelInstallProperties> configure) {
-        configure.execute(this._kernelInstallProps)
+    ZipKernelTask kernelInstallProps(
+            @DelegatesTo(value = KernelInstallProperties.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this._kernelInstallProps)
+        return this
+    }
+
+    ZipKernelTask kernelInstallProps(Action<? super KernelInstallProperties> configureAction) {
+        configureAction.execute(this._kernelInstallProps)
+        return this
     }
 }

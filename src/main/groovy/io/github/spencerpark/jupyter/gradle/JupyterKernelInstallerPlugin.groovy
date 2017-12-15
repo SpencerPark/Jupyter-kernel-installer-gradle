@@ -36,7 +36,7 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
 
         project.with {
             KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
-            Action<KernelInstallProperties> configInstallProps = { KernelInstallProperties installProps ->
+            Action<KernelInstallProperties> configureInstallProps = { KernelInstallProperties installProps ->
                 installProps.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
                 installProps.setKernelLanguage(kernelProps.getKernelLanguageProvider())
                 installProps.setKernelEnv(kernelProps.getKernelEnvProvider())
@@ -50,17 +50,17 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.group = 'jupyter'
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
-                task.kernelInstallProps(configInstallProps)
+                task.kernelInstallProps(configureInstallProps)
 
                 task.kernelInstallPath = kernelProps.kernelInstallPathProvider
             })
 
-            tasks.create('zip', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
+            tasks.create('zipKernel', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
                 task.description = 'Create a zip with the kernel files.'
                 task.group = 'jupyter'
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
-                task.kernelInstallProps(configInstallProps)
+                task.kernelInstallProps(configureInstallProps)
             })
         }
     }
