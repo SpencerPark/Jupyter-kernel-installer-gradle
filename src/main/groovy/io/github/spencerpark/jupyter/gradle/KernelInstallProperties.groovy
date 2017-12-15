@@ -24,129 +24,94 @@
 package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 
 @CompileStatic
-class KernelExtension {
+class KernelInstallProperties {
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
     private final PropertyState<Map<String, String>> _kernelEnv
-
     private final PropertyState<File> _kernelExecutable
     private final ConfigurableFileCollection _kernelResources
 
-    private final PropertyState<File> _kernelInstallPath
-
-    KernelExtension(Project project) {
+    KernelInstallProperties(Project project) {
         this._kernelDisplayName = project.property(String.class)
-        this._kernelDisplayName.set(project.name)
-
         this._kernelLanguage = project.property(String.class)
-        this._kernelLanguage.set(project.name)
-
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
-        this._kernelEnv.set([:])
 
         this._kernelExecutable = project.property(File.class)
-        this._kernelExecutable.set(project.provider {
-            Jar jarTask = project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar
-            return jarTask.archivePath
-        })
-
-        this._kernelResources = project.files(project.fileTree('kernel'))
-
-        this._kernelInstallPath = project.property(File.class)
-        this._kernelInstallPath.set(project.provider {
-            String USER_HOME = System.getProperty('user.home')
-            return new File("$USER_HOME/.ipython")
-        })
+        this._kernelResources = project.files()
     }
 
+    @Input
     String getKernelDisplayName() {
         return this._kernelDisplayName.get()
-    }
-
-    Provider<String> getKernelDisplayNameProvider() {
-        return this._kernelDisplayName
     }
 
     void setKernelDisplayName(String kernelDisplayName) {
         this._kernelDisplayName.set(kernelDisplayName)
     }
 
-
-    String getKernelLanguage() {
-        return this._kernelLanguage.get()
+    void setKernelDisplayName(Provider<String> kernelDisplayName) {
+        this._kernelDisplayName.set(kernelDisplayName)
     }
 
-    Provider<String> getKernelLanguageProvider() {
-        return this._kernelLanguage
+
+    @Input
+    String getKernelLanguage() {
+        return this._kernelLanguage.get()
     }
 
     void setKernelLanguage(String kernelLanguage) {
         this._kernelLanguage.set(kernelLanguage)
     }
 
-
-    Map<String, String> getKernelEnv() {
-        return this._kernelEnv.get()
+    void setKernelLanguage(Provider<String> kernelLanguage) {
+        this._kernelLanguage.set(kernelLanguage)
     }
 
-    Provider<Map<String, String>> getKernelEnvProvider() {
-        return this._kernelEnv
+
+    @Input
+    Map<String, String> getKernelEnv() {
+        return this._kernelEnv.get()
     }
 
     void setKernelEnv(Map<String, String> kernelEnv) {
         this._kernelEnv.set(kernelEnv)
     }
 
-    void kernelEnv(Map<String, String> kernelEnv) {
-        this.getKernelEnv().putAll(kernelEnv)
-    }
-
-    void kernelEnv(Action<? super Map<String, String>> kernelEnvAction) {
-        kernelEnvAction.execute(this.getKernelEnv())
+    void setKernelEnv(Provider<Map<String, String>> kernelEnv) {
+        this._kernelEnv.set(kernelEnv)
     }
 
 
+    @InputFile
     File getKernelExecutable() {
         return this._kernelExecutable.get()
     }
 
-    Provider<File> getKernelExecutableProvider() {
-        return this._kernelExecutable
+    void setKernelExecutable(File kernelExecutable) {
+        this._kernelExecutable.set(kernelExecutable)
     }
 
-    void setKernelExecutable(File file) {
-        this._kernelExecutable.set(file)
+    void setKernelExecutable(Provider<File> kernelExecutable) {
+        this._kernelExecutable.set(kernelExecutable)
     }
 
 
+    @InputFiles
     FileCollection getKernelResources() {
         return this._kernelResources
     }
 
     void setKernelResources(FileCollection kernelResources) {
         this._kernelResources.setFrom(kernelResources)
-    }
-
-
-    File getKernelInstallPath() {
-        return this._kernelInstallPath.get()
-    }
-
-    Provider<File> getKernelInstallPathProvider() {
-        return this._kernelInstallPath
-    }
-
-    void setKernelInstallPath(File file) {
-        this._kernelInstallPath.set(file)
     }
 }

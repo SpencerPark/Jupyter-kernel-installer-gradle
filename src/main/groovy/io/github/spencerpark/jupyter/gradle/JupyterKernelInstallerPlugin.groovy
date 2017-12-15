@@ -23,30 +23,45 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
+import groovy.transform.CompileStatic
+import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 
+@CompileStatic
 class JupyterKernelInstallerPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+
         project.with {
             KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
+            Action<KernelInstallProperties> configInstallProps = { KernelInstallProperties installProps ->
+                installProps.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
+                installProps.setKernelLanguage(kernelProps.getKernelLanguageProvider())
+                installProps.setKernelEnv(kernelProps.getKernelEnvProvider())
 
-            tasks.create('installKernel', InstallKernelTask.class).with {
-                description = 'Locally install the kernel'
-                group = 'jupyter'
-                dependsOn(JavaPlugin.JAR_TASK_NAME)
-
-                kernelDisplayName = kernelProps.kernelDisplayNameProvider
-                kernelLanguage = kernelProps.kernelLanguageProvider
-                kernelEnv = kernelProps.kernelEnvProvider
-
-                kernelExecutable = kernelProps.kernelExecutableProvider
-                kernelResources = kernelProps.kernelResources
-
-                kernelInstallPath = kernelProps.kernelInstallPathProvider
+                installProps.setKernelExecutable(kernelProps.getKernelExecutableProvider())
+                installProps.setKernelResources(kernelProps.getKernelResources())
             }
+
+            tasks.create('installKernel', InstallKernelTask.class, (Action<InstallKernelTask>) { InstallKernelTask task ->
+                task.description = 'Locally install the kernel.'
+                task.group = 'jupyter'
+                task.dependsOn(JavaPlugin.JAR_TASK_NAME)
+
+                task.kernelInstallProps(configInstallProps)
+
+                task.kernelInstallPath = kernelProps.kernelInstallPathProvider
+            })
+
+            tasks.create('zip', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
+                task.description = 'Create a zip with the kernel files.'
+                task.group = 'jupyter'
+                task.dependsOn(JavaPlugin.JAR_TASK_NAME)
+
+                task.kernelInstallProps(configInstallProps)
+            })
         }
     }
 }

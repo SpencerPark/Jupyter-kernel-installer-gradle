@@ -24,18 +24,22 @@
 package io.github.spencerpark.jupyter.gradle
 
 import groovy.json.JsonOutput
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class KernelSpec {
-    private static final String KERNELSPEC_TEMPLATE_PATH = '/kernel.json.template'
-
     private final String compiledSpec
 
-    private final File installedKernelJar
+    private final String installedKernelJar
     private final String kernelDisplayName
     private final String kernelLanguage
     private final Map<String, String> kernelEnvironment
 
     KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage, Map<String, String> kernelEnvironment) {
+        this(installedKernelJar.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, kernelEnvironment)
+    }
+
+    KernelSpec(String installedKernelJar, String kernelDisplayName, String kernelLanguage, Map<String, String> kernelEnvironment) {
         this.installedKernelJar = installedKernelJar
         this.kernelDisplayName = kernelDisplayName
         this.kernelLanguage = kernelLanguage
@@ -43,7 +47,7 @@ class KernelSpec {
 
         this.compiledSpec = JsonOutput.prettyPrint(
                 JsonOutput.toJson(
-                        argv: ['java', '-jar', getInstalledKernelJar().absolutePath.toString().replace(File.separatorChar, '/' as char), '{connection_file}'],
+                        argv: ['java', '-jar', getInstalledKernelJar(), '{connection_file}'],
                         display_name: getKernelDisplayName(),
                         language: getKernelLanguage(),
                         env: getKernelEnv()
@@ -51,7 +55,7 @@ class KernelSpec {
         )
     }
 
-    File getInstalledKernelJar() {
+    String getInstalledKernelJar() {
         return installedKernelJar
     }
 
