@@ -33,15 +33,17 @@ import org.gradle.api.plugins.JavaPlugin
 class JupyterKernelInstallerPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
-
         project.with {
             KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
             Action<KernelInstallProperties> configureInstallProps = { KernelInstallProperties installProps ->
+                installProps.setKernelName(kernelProps.getKernelNameProvider())
                 installProps.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
                 installProps.setKernelLanguage(kernelProps.getKernelLanguageProvider())
+
                 installProps.setKernelEnv(kernelProps.getKernelEnvProvider())
 
                 installProps.setKernelExecutable(kernelProps.getKernelExecutableProvider())
+
                 installProps.setKernelResources(kernelProps.getKernelResources())
             }
 

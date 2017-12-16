@@ -43,8 +43,9 @@ plugins {
 
 | **property**      | **type**            | **default**             | **description**                                                                    |
 |-------------------|---------------------|-------------------------|------------------------------------------------------------------------------------|
-| kernelDisplayName | String              | `project.name`          | The display name of the kernel                                                     |
-| kernelLanguage    | String              | `project.name`          | The name of the language that the kernel can execute code in                       |
+| kernelName        | String              | `project.name`          | The name of the kernel (the kernel folder)                                         |
+| kernelDisplayName | String              | _kernelName_            | The display name of the kernel                                                     |
+| kernelLanguage    | String              | _kernelName_            | The name of the language that the kernel can execute code in                       |
 | kernelEnv         | Map<String, String> | `[:]`                   | Environment variable names and values that a kernel may use for configuration      |
 | kernelExecutable  | File                | `jar.archivePath`       | The build output that must be invoked to start the kernel                          |
 | kernelResources   | FileCollection      | `kernel` directory      | The resources that should be included with the kernel such as a `kernel.js`        |
@@ -54,6 +55,7 @@ These properties are configured in the `jupyter` extension at the top level of t
 
 ```gradle
 jupyter {
+    kernelName = 'Java'
     kernelDisplayName = 'My Java Kernel'
     kernelLanguage = 'java'
 }

@@ -79,7 +79,7 @@ class InstallKernelTask extends DefaultTask {
 
     @OutputDirectory
     File getKernelDirectory() {
-        return new File([this.getKernelInstallPath().absolutePath, 'kernels', this._kernelInstallProps.getKernelLanguage()]
+        return new File([this.getKernelInstallPath().absolutePath, 'kernels', this._kernelInstallProps.getKernelName()]
                 .join(File.separator))
     }
 
@@ -88,10 +88,6 @@ class InstallKernelTask extends DefaultTask {
     File getInstalledKernelJar() {
         return new File(getKernelDirectory(), this._kernelInstallProps.getKernelExecutable().name)
     }
-
-    // -------------------------------------------------------------
-    // Task execution
-    // -------------------------------------------------------------
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {

@@ -35,20 +35,42 @@ import org.gradle.api.tasks.InputFiles
 
 @CompileStatic
 class KernelInstallProperties {
+    private final PropertyState<String> _kernelName
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
+
     private final PropertyState<Map<String, String>> _kernelEnv
+
     private final PropertyState<File> _kernelExecutable
+
     private final ConfigurableFileCollection _kernelResources
 
     KernelInstallProperties(Project project) {
+        this._kernelName = project.property(String.class)
         this._kernelDisplayName = project.property(String.class)
         this._kernelLanguage = project.property(String.class)
+
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
 
         this._kernelExecutable = project.property(File.class)
+
         this._kernelResources = project.files()
     }
+
+
+    @Input
+    String getKernelName() {
+        return this._kernelName.get()
+    }
+
+    void setKernelName(String kernelName) {
+        this._kernelName.set(kernelName)
+    }
+
+    void setKernelName(Provider<String> kernelName) {
+        this._kernelName.set(kernelName)
+    }
+
 
     @Input
     String getKernelDisplayName() {

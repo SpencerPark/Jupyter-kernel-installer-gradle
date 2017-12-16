@@ -36,21 +36,27 @@ import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class KernelExtension {
+    private final PropertyState<String> _kernelName
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
+
     private final PropertyState<Map<String, String>> _kernelEnv
 
     private final PropertyState<File> _kernelExecutable
+
     private final ConfigurableFileCollection _kernelResources
 
     private final PropertyState<File> _kernelInstallPath
 
     KernelExtension(Project project) {
+        this._kernelName = project.property(String.class)
+        this._kernelName.set(project.name)
+
         this._kernelDisplayName = project.property(String.class)
-        this._kernelDisplayName.set(project.name)
+        this._kernelDisplayName.set(this._kernelName)
 
         this._kernelLanguage = project.property(String.class)
-        this._kernelLanguage.set(project.name)
+        this._kernelLanguage.set(this._kernelName)
 
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
         this._kernelEnv.set([:])
@@ -69,6 +75,20 @@ class KernelExtension {
             return new File("$USER_HOME/.ipython")
         })
     }
+
+
+    String getKernelName() {
+        return this._kernelName.get()
+    }
+
+    Provider<String> getKernelNameProvider() {
+        return this._kernelName
+    }
+
+    void setKernelName(String kernelName) {
+        this._kernelName.set(kernelName)
+    }
+
 
     String getKernelDisplayName() {
         return this._kernelDisplayName.get()

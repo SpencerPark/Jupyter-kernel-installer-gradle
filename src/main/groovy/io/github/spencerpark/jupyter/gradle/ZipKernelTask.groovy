@@ -35,7 +35,7 @@ import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class ZipKernelTask extends Zip {
-    private static final String UNSET_PATH_TOKEN = "@kernel_install_directory@"
+    private static final String UNSET_PATH_TOKEN = "@KERNEL_INSTALL_DIRECTORY@"
     private static final String KERNEL_JSON_PATH = 'kernel.json'
 
     private final KernelInstallProperties _kernelInstallProps
@@ -70,6 +70,9 @@ class ZipKernelTask extends Zip {
         }
         from {
             return this._kernelInstallProps.getKernelExecutable()
+        }
+        into {
+            return this._kernelInstallProps.getKernelName()
         }
     }
 
