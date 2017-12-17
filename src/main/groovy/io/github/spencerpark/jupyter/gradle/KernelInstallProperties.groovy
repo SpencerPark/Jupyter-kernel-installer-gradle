@@ -24,6 +24,7 @@
 package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
@@ -55,6 +56,12 @@ class KernelInstallProperties {
         this._kernelExecutable = project.property(File.class)
 
         this._kernelResources = project.files()
+    }
+
+    KernelInstallProperties validateName() {
+        if (!(this.getKernelName() ==~ /^[a-zA-Z0-9._\-]+$/))
+            throw new GradleException("Invalid kernel name '${this.getKernelName()}' must match '^[a-zA-Z0-9._\\-]+\$'")
+        return this
     }
 
 

@@ -53,8 +53,10 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 task.kernelInstallProps(configureInstallProps)
+                task.doFirst(task.kernelInstallProps.&validateName)
 
                 task.kernelInstallPath = kernelProps.kernelInstallPathProvider
+
             })
 
             tasks.create('zipKernel', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
@@ -63,6 +65,7 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 task.kernelInstallProps(configureInstallProps)
+                task.doFirst(task.kernelInstallProps.&validateName)
             })
         }
     }
