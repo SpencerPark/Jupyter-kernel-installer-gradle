@@ -28,51 +28,58 @@ import groovy.transform.CompileStatic
 
 @CompileStatic
 class KernelSpec {
-    private final String compiledSpec
+    private final String _compiledSpec
 
-    private final String installedKernelJar
-    private final String kernelDisplayName
-    private final String kernelLanguage
-    private final Map<String, String> kernelEnvironment
+    private final String _installedKernelJar
+    private final String _kernelDisplayName
+    private final String _kernelLanguage
+    private final String _kernelInterruptMode
+    private final Map<String, String> _kernelEnvironment
 
-    KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage, Map<String, String> kernelEnvironment) {
-        this(installedKernelJar.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, kernelEnvironment)
+    KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
+        this(installedKernelJar.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, interruptMode, kernelEnvironment)
     }
 
-    KernelSpec(String installedKernelJar, String kernelDisplayName, String kernelLanguage, Map<String, String> kernelEnvironment) {
-        this.installedKernelJar = installedKernelJar
-        this.kernelDisplayName = kernelDisplayName
-        this.kernelLanguage = kernelLanguage
-        this.kernelEnvironment = kernelEnvironment
+    KernelSpec(String installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
+        this._installedKernelJar = installedKernelJar
+        this._kernelDisplayName = kernelDisplayName
+        this._kernelLanguage = kernelLanguage
+        this._kernelInterruptMode = interruptMode
+        this._kernelEnvironment = kernelEnvironment
 
-        this.compiledSpec = JsonOutput.prettyPrint(
+        this._compiledSpec = JsonOutput.prettyPrint(
                 JsonOutput.toJson(
                         argv: ['java', '-jar', getInstalledKernelJar(), '{connection_file}'],
                         display_name: getKernelDisplayName(),
                         language: getKernelLanguage(),
+                        interrupt_mode: getKernelInterruptMode(),
                         env: getKernelEnv()
                 )
         )
     }
 
     String getInstalledKernelJar() {
-        return installedKernelJar
+        return _installedKernelJar
     }
 
     String getKernelDisplayName() {
-        return kernelDisplayName
+        return _kernelDisplayName
     }
 
     String getKernelLanguage() {
-        return kernelLanguage
+        return _kernelLanguage
+    }
+
+    String getKernelInterruptMode() {
+        return _kernelInterruptMode
     }
 
     Map<String, String> getKernelEnv() {
-        return kernelEnvironment
+        return _kernelEnvironment
     }
 
     @Override
     String toString() {
-        return compiledSpec
+        return _compiledSpec
     }
 }

@@ -105,6 +105,7 @@ class InstallKernelTask extends DefaultTask {
                 this.getInstalledKernelJar(),
                 this._kernelInstallProps.getKernelDisplayName(),
                 this._kernelInstallProps.getKernelLanguage(),
+                this._kernelInstallProps.getKernelInterruptMode(),
                 this._kernelInstallProps.getKernelEnv())
 
         File kernelSpec = new File(this.getKernelDirectory(), 'kernel.json')

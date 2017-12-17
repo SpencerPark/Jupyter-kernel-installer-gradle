@@ -62,6 +62,7 @@ class ZipKernelTask extends Zip {
                         "$ZipKernelTask.UNSET_PATH_TOKEN/${this._kernelInstallProps.getKernelExecutable().getName()}",
                         this._kernelInstallProps.getKernelDisplayName(),
                         this._kernelInstallProps.getKernelLanguage(),
+                        this._kernelInstallProps.getKernelInterruptMode(),
                         this._kernelInstallProps.getKernelEnv())
 
                 out.write(spec.toString().getBytes('UTF-8'))

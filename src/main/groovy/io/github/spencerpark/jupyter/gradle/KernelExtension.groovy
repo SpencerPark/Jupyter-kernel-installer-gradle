@@ -40,6 +40,8 @@ class KernelExtension {
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
 
+    private final PropertyState<String> _kernelInterruptMode
+
     private final PropertyState<Map<String, String>> _kernelEnv
 
     private final PropertyState<File> _kernelExecutable
@@ -57,6 +59,9 @@ class KernelExtension {
 
         this._kernelLanguage = project.property(String.class)
         this._kernelLanguage.set(this._kernelName)
+
+        this._kernelInterruptMode = project.property(String.class)
+        this._kernelInterruptMode.set('signal')
 
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
         this._kernelEnv.set([:])
@@ -116,6 +121,19 @@ class KernelExtension {
     }
 
 
+    String getKernelInterruptMode() {
+        return this._kernelInterruptMode.get()
+    }
+
+    Provider<String> getKernelInterruptModeProvider() {
+        return this._kernelInterruptMode
+    }
+
+    void setKernelInterruptMode(String kernelInterruptMode) {
+        this._kernelInterruptMode.set(kernelInterruptMode)
+    }
+
+
     Map<String, String> getKernelEnv() {
         return this._kernelEnv.get()
     }
@@ -130,10 +148,6 @@ class KernelExtension {
 
     void kernelEnv(Map<String, String> kernelEnv) {
         this.getKernelEnv().putAll(kernelEnv)
-    }
-
-    void kernelEnv(@DelegatesTo(value = Map.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
-        ConfigureUtil.configure(configureClosure, this.getKernelEnv())
     }
 
     void kernelEnv(Action<? super Map<String, String>> kernelEnvAction) {

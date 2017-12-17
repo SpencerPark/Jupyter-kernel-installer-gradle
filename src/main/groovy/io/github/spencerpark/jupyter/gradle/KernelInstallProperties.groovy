@@ -40,6 +40,8 @@ class KernelInstallProperties {
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
 
+    private final PropertyState<String> _kernelInterruptMode
+
     private final PropertyState<Map<String, String>> _kernelEnv
 
     private final PropertyState<File> _kernelExecutable
@@ -51,6 +53,8 @@ class KernelInstallProperties {
         this._kernelDisplayName = project.property(String.class)
         this._kernelLanguage = project.property(String.class)
 
+        this._kernelInterruptMode = project.property(String.class)
+
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
 
         this._kernelExecutable = project.property(File.class)
@@ -58,9 +62,11 @@ class KernelInstallProperties {
         this._kernelResources = project.files()
     }
 
-    KernelInstallProperties validateName() {
+    KernelInstallProperties validate() {
         if (!(this.getKernelName() ==~ /^[a-zA-Z0-9._\-]+$/))
             throw new GradleException("Invalid kernel name '${this.getKernelName()}' must match '^[a-zA-Z0-9._\\-]+\$'")
+        if (!(this.getKernelInterruptMode() in ['message', 'signal']))
+            throw new GradleException("Invalid interrupt mode '${this.getKernelInterruptMode()}' should be either 'message' or 'signal'")
         return this
     }
 
@@ -107,6 +113,20 @@ class KernelInstallProperties {
     }
 
 
+    @InputFile
+    File getKernelExecutable() {
+        return this._kernelExecutable.get()
+    }
+
+    void setKernelExecutable(File kernelExecutable) {
+        this._kernelExecutable.set(kernelExecutable)
+    }
+
+    void setKernelExecutable(Provider<File> kernelExecutable) {
+        this._kernelExecutable.set(kernelExecutable)
+    }
+
+
     @Input
     Map<String, String> getKernelEnv() {
         return this._kernelEnv.get()
@@ -121,17 +141,17 @@ class KernelInstallProperties {
     }
 
 
-    @InputFile
-    File getKernelExecutable() {
-        return this._kernelExecutable.get()
+    @Input
+    String getKernelInterruptMode() {
+        return this._kernelInterruptMode.get()
     }
 
-    void setKernelExecutable(File kernelExecutable) {
-        this._kernelExecutable.set(kernelExecutable)
+    void setKernelInterruptMode(String kernelInterruptMode) {
+        this._kernelInterruptMode.set(kernelInterruptMode)
     }
 
-    void setKernelExecutable(Provider<File> kernelExecutable) {
-        this._kernelExecutable.set(kernelExecutable)
+    void setKernelInterruptMode(Provider<String> kernelInterruptMode) {
+        this._kernelInterruptMode.set(kernelInterruptMode)
     }
 
 

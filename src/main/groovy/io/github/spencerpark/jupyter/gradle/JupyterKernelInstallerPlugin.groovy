@@ -40,6 +40,8 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 installProps.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
                 installProps.setKernelLanguage(kernelProps.getKernelLanguageProvider())
 
+                installProps.setKernelInterruptMode(kernelProps.getKernelInterruptModeProvider())
+
                 installProps.setKernelEnv(kernelProps.getKernelEnvProvider())
 
                 installProps.setKernelExecutable(kernelProps.getKernelExecutableProvider())
@@ -53,7 +55,7 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 task.kernelInstallProps(configureInstallProps)
-                task.doFirst(task.kernelInstallProps.&validateName)
+                task.doFirst(task.kernelInstallProps.&validate)
 
                 task.kernelInstallPath = kernelProps.kernelInstallPathProvider
 
@@ -65,7 +67,7 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 task.kernelInstallProps(configureInstallProps)
-                task.doFirst(task.kernelInstallProps.&validateName)
+                task.doFirst(task.kernelInstallProps.&validate)
             })
         }
     }
