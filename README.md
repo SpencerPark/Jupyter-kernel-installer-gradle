@@ -69,6 +69,7 @@ Try to use the `jupyter` extension defined above as it will configure all tasks 
 >   Locally install the kernel.
 
 **Options:**
+
 *   `kernelInstallProps` configure the kernel properties (`kernelDisplayName`, `kernelLanguage`, `kernelEnv`, `kernelExecutable`, `kernelResources`) locally so they only affect this task.
 *   `kernelInstallPath` set the install path from the default `"$USER_HOME/.ipython"` for this task
 
@@ -76,5 +77,20 @@ Try to use the `jupyter` extension defined above as it will configure all tasks 
 >   `Create a zip with the kernel files.`
 
 **Options:**
+
 *   `kernelInstallProps` configure the kernel properties (`kernelDisplayName`, `kernelLanguage`, `kernelEnv`, `kernelExecutable`, `kernelResources`) locally so they only affect this task.
 *   All options defined for the base `Zip` tasks (such as `archiveName`, `zip64`, `entryCompression`, etc.)
+*   `installers` configure the installers distributed with the archive. Defaults to `'python'`.
+    *   Currently supported:
+
+        | Name            | Groups     |
+        |-----------------|------------|
+        | `PYTHON_SCRIPT` | `'python'` |
+    *   Use the `with` or `without` method to add or remove a specific installer (`'PYTHON_SCRIPT'`) or group of installers (`'python'`)
+    *   ```gradle
+        zipKernel {
+            installers {
+                with 'python'
+            }
+        }
+        ```
