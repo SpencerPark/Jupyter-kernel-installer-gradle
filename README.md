@@ -24,7 +24,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.1.5"
+    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.1.6"
   }
 }
 
@@ -35,7 +35,7 @@ apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
 
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "1.1.5"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "1.1.6"
 }
 ```
 
@@ -92,7 +92,7 @@ Try to use the `jupyter` extension defined above as it will configure all tasks 
 
         | Name            | Groups     |                        |
         |-----------------|------------| -----------------------|
-        | `PYTHON_SCRIPT` | `'python'` | `python install.py -h` |
+        | `PYTHON_SCRIPT` | `'python'` | `python install.template.py -h` |
     *   Use the `with` or `without` method to add or remove a specific installer (`'PYTHON_SCRIPT'`) or group of installers (`'python'`)
     *   ```gradle
         zipKernel {

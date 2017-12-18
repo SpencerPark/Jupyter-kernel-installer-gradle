@@ -24,6 +24,7 @@
 package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
+import io.github.spencerpark.jupyter.gradle.installers.InstallersSpec
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.api.Action
 import org.gradle.api.file.CopySpec
@@ -35,7 +36,7 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.util.ConfigureUtil
 
-import static io.github.spencerpark.jupyter.gradle.Methods.PYTHON_SCRIPT
+import static io.github.spencerpark.jupyter.gradle.installers.InstallerMethod.PYTHON_SCRIPT
 
 @CompileStatic
 class ZipKernelTask extends Zip {
@@ -104,7 +105,7 @@ class ZipKernelTask extends Zip {
 
             switch (this._installers) {
                 case PYTHON_SCRIPT:
-                    installerScripts.add('install.py', resourceAsFile('install-scripts/python/install.py'))
+                    installerScripts.add('install.py', resourceAsFile('install-scripts/python/install.template.py'))
                     break
             }
 
