@@ -37,28 +37,28 @@ import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class InstallKernelTask extends DefaultTask {
-    private final KernelInstallProperties _kernelInstallProps
+    private final KernelInstallSpec _kernelInstallSpec
     private final PropertyState<File> _kernelInstallPath
 
     InstallKernelTask() {
-        this._kernelInstallProps = new KernelInstallProperties(super.project)
+        this._kernelInstallSpec = new KernelInstallSpec(super.project)
         this._kernelInstallPath = super.project.property(File.class)
     }
 
 
     @Nested
-    KernelInstallProperties getKernelInstallProps() {
-        return this._kernelInstallProps
+    KernelInstallSpec getKernelInstallSpec() {
+        return this._kernelInstallSpec
     }
 
-    InstallKernelTask kernelInstallProps(
-            @DelegatesTo(value = KernelInstallProperties.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
-        ConfigureUtil.configure(configureClosure, this._kernelInstallProps)
+    InstallKernelTask kernelInstallSpec(
+            @DelegatesTo(value = KernelInstallSpec.class, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this._kernelInstallSpec)
         return this
     }
 
-    InstallKernelTask kernelInstallProps(Action<? super KernelInstallProperties> configure) {
-        configure.execute(this._kernelInstallProps)
+    InstallKernelTask kernelInstallSpec(Action<? super KernelInstallSpec> configure) {
+        configure.execute(this._kernelInstallSpec)
         return this
     }
 
@@ -79,14 +79,14 @@ class InstallKernelTask extends DefaultTask {
 
     @OutputDirectory
     File getKernelDirectory() {
-        return new File([this.getKernelInstallPath().absolutePath, 'kernels', this._kernelInstallProps.getKernelName()]
+        return new File([this.kernelInstallPath.absolutePath, 'kernels', this.kernelInstallSpec.getKernelName()]
                 .join(File.separator))
     }
 
 
     @Internal
     File getInstalledKernelJar() {
-        return new File(getKernelDirectory(), this._kernelInstallProps.getKernelExecutable().name)
+        return new File(this.kernelDirectory, this.kernelInstallSpec.kernelExecutable.name)
     }
 
     @TaskAction
@@ -94,19 +94,19 @@ class InstallKernelTask extends DefaultTask {
         super.project.copySpec()
         this.writeKernelSpec()
         super.project.copy {
-            from this._kernelInstallProps.getKernelResources()
-            from this._kernelInstallProps.getKernelExecutable()
+            from this.kernelInstallSpec.kernelResources
+            from this.kernelInstallSpec.kernelExecutable
             into this.getKernelDirectory()
         }
     }
 
     private void writeKernelSpec() {
-        KernelSpec spec = new KernelSpec(
+        KernelJson spec = new KernelJson(
                 this.getInstalledKernelJar(),
-                this._kernelInstallProps.getKernelDisplayName(),
-                this._kernelInstallProps.getKernelLanguage(),
-                this._kernelInstallProps.getKernelInterruptMode(),
-                this._kernelInstallProps.getKernelEnv())
+                this.kernelInstallSpec.kernelDisplayName,
+                this.kernelInstallSpec.kernelLanguage,
+                this.kernelInstallSpec.kernelInterruptMode,
+                this.kernelInstallSpec.kernelEnv)
 
         File kernelSpec = new File(this.getKernelDirectory(), 'kernel.json')
         kernelSpec.text = spec.toString()

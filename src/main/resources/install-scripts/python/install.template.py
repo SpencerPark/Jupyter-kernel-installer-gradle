@@ -5,6 +5,60 @@ import sys
 
 from jupyter_client.kernelspec import KernelSpecManager
 
+ALIASES = {
+    @/s/ARG_ALIASES_DICT@
+}
+
+NAME_MAP = {
+    @/s/NAME_MAP_DICT@
+}
+
+def type_assertion(name, type_fn):
+    env = NAME_MAP[name]
+    aliases = ALIASES.get(env, {})
+
+    def checker(value):
+        alias = aliases.get(value, value)
+        type_fn(alias)
+        return alias
+    setattr(checker, '__name__', getattr(type_fn, '__name__', 'type_fn'))
+    return checker
+
+class EnvVar(argparse.Action):
+    def __init__(self, option_strings, dest, aliases=None, name_map=None, list_sep=None, **kwargs):
+        super(EnvVar, self).__init__(option_strings, dest, **kwargs)
+
+        if aliases is None: aliases = {}
+        if name_map is None: name_map = {}
+
+        self.aliases = aliases
+        self.name_map = name_map
+        self.list_sep = list_sep
+
+        for name in self.option_strings:
+            if name.lstrip('-') not in name_map:
+                raise ValueError('Name "%s" is not mapped to an environment variable' % name.lstrip('-'))
+
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        if option_string is None:
+            raise ValueError('option_string is required')
+
+        env = getattr(namespace, self.dest, None)
+        if env is None:
+            env = {}
+
+        name = option_string.lstrip('-')
+        env_var = self.name_map[name]
+
+        if self.list_sep:
+            old = env.get(env_var)
+            value = old + self.list_sep + str(value) if old is not None else str(value)
+
+        env[env_var] = value
+
+        setattr(namespace, self.dest, env)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Install the @KERNEL_NAME@ kernel.')
 
@@ -34,7 +88,11 @@ if __name__ == '__main__':
         action='store_true'
     )
 
+    @/s/GENERATED_ARGS@
+
     args = parser.parse_args()
+
+    @/s/GENERATED_DEFAULT_REPLACEMENT@
 
     # Install the kernel
     install_dest = KernelSpecManager().install_kernel_spec(
@@ -63,7 +121,11 @@ if __name__ == '__main__':
             '@KERNEL_INSTALL_DIRECTORY@',
             install_dest_json_fragment
         )
+        kernel_json_json_contents = json.loads(kernel_json_contents)
+        kernel_env = kernel_json_json_contents.setdefault('env', {})
+        for k, v in args.env.items():
+            kernel_env[k] = v
         with open(installed_kernel_json_path, 'w') as installed_kernel_json_file:
-            installed_kernel_json_file.write(kernel_json_contents)
+            json.dump(kernel_json_json_contents, installed_kernel_json_file, indent=4, sort_keys=True)
 
     print('Installed @KERNEL_NAME@ kernel into "%s"' % install_dest)

@@ -27,7 +27,7 @@ import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 
 @CompileStatic
-class KernelSpec {
+class KernelJson {
     private final String _compiledSpec
 
     private final String _installedKernelJar
@@ -36,11 +36,11 @@ class KernelSpec {
     private final String _kernelInterruptMode
     private final Map<String, String> _kernelEnvironment
 
-    KernelSpec(File installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
+    KernelJson(File installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
         this(installedKernelJar.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, interruptMode, kernelEnvironment)
     }
 
-    KernelSpec(String installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
+    KernelJson(String installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
         this._installedKernelJar = installedKernelJar
         this._kernelDisplayName = kernelDisplayName
         this._kernelLanguage = kernelLanguage

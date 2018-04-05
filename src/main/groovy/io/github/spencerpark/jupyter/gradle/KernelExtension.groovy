@@ -50,6 +50,8 @@ class KernelExtension {
 
     private final PropertyState<File> _kernelInstallPath
 
+    private final PropertyState<KernelParameterSpecContainer> _kernelParameters
+
     KernelExtension(Project project) {
         this._kernelName = project.property(String.class)
         this._kernelName.set(project.name)
@@ -79,6 +81,9 @@ class KernelExtension {
             String USER_HOME = System.getProperty('user.home')
             return new File("$USER_HOME/.ipython")
         })
+
+        this._kernelParameters = project.property(KernelParameterSpecContainer)
+        this._kernelParameters.set(new KernelParameterSpecContainer(project))
     }
 
 
@@ -185,7 +190,29 @@ class KernelExtension {
         return this._kernelInstallPath
     }
 
-    void setKernelInstallPath(File file) {
-        this._kernelInstallPath.set(file)
+    void setKernelInstallPath(File kernelInstallPath) {
+        this._kernelInstallPath.set(kernelInstallPath)
+    }
+
+
+    KernelParameterSpecContainer getKernelParameters() {
+        return this._kernelParameters.get()
+    }
+
+    Provider<KernelParameterSpecContainer> getKernelParametersProvider() {
+        return this._kernelParameters
+    }
+
+    void setKernelParameters(KernelParameterSpecContainer kernelParameters) {
+        this._kernelParameters.set(kernelParameters)
+    }
+
+    void kernelParameters(
+            @DelegatesTo(value = KernelParameterSpecContainer, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.getKernelParameters())
+    }
+
+    void kernelParameters(Action<? extends KernelParameterSpecContainer> configure) {
+        configure.execute(this.getKernelParameters())
     }
 }

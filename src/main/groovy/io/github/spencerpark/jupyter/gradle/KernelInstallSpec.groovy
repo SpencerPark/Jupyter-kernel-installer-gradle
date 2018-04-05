@@ -35,7 +35,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 
 @CompileStatic
-class KernelInstallProperties {
+class KernelInstallSpec {
     private final PropertyState<String> _kernelName
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
@@ -48,7 +48,7 @@ class KernelInstallProperties {
 
     private final ConfigurableFileCollection _kernelResources
 
-    KernelInstallProperties(Project project) {
+    KernelInstallSpec(Project project) {
         this._kernelName = project.property(String.class)
         this._kernelDisplayName = project.property(String.class)
         this._kernelLanguage = project.property(String.class)
@@ -62,7 +62,7 @@ class KernelInstallProperties {
         this._kernelResources = project.files()
     }
 
-    KernelInstallProperties validate() {
+    KernelInstallSpec validate() throws GradleException {
         if (!(this.getKernelName() ==~ /^[a-zA-Z0-9._\-]+$/))
             throw new GradleException("Invalid kernel name '${this.getKernelName()}' must match '^[a-zA-Z0-9._\\-]+\$'")
         if (!(this.getKernelInterruptMode() in ['message', 'signal']))

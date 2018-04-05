@@ -35,18 +35,18 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.with {
             KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
-            Action<KernelInstallProperties> configureInstallProps = { KernelInstallProperties installProps ->
-                installProps.setKernelName(kernelProps.getKernelNameProvider())
-                installProps.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
-                installProps.setKernelLanguage(kernelProps.getKernelLanguageProvider())
+            Action<KernelInstallSpec> configureInstallProps = { KernelInstallSpec installSpec ->
+                installSpec.setKernelName(kernelProps.getKernelNameProvider())
+                installSpec.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
+                installSpec.setKernelLanguage(kernelProps.getKernelLanguageProvider())
 
-                installProps.setKernelInterruptMode(kernelProps.getKernelInterruptModeProvider())
+                installSpec.setKernelInterruptMode(kernelProps.getKernelInterruptModeProvider())
 
-                installProps.setKernelEnv(kernelProps.getKernelEnvProvider())
+                installSpec.setKernelEnv(kernelProps.getKernelEnvProvider())
 
-                installProps.setKernelExecutable(kernelProps.getKernelExecutableProvider())
+                installSpec.setKernelExecutable(kernelProps.getKernelExecutableProvider())
 
-                installProps.setKernelResources(kernelProps.getKernelResources())
+                installSpec.setKernelResources(kernelProps.getKernelResources())
             }
 
             tasks.create('installKernel', InstallKernelTask.class, (Action<InstallKernelTask>) { InstallKernelTask task ->
@@ -54,8 +54,10 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.group = 'jupyter'
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
-                task.kernelInstallProps(configureInstallProps)
-                task.doFirst(task.kernelInstallProps.&validate)
+                // Note that this sets the values to **providers**. Essentially the providers act as
+                // references to a value so that they are shared between tasks and configurations.
+                task.kernelInstallSpec(configureInstallProps)
+                task.doFirst(task.kernelInstallSpec.&validate)
 
                 task.kernelInstallPath = kernelProps.kernelInstallPathProvider
 
@@ -66,8 +68,10 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 task.group = 'jupyter'
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
-                task.kernelInstallProps(configureInstallProps)
-                task.doFirst(task.kernelInstallProps.&validate)
+                task.kernelInstallSpec(configureInstallProps)
+                task.doFirst(task.kernelInstallSpec.&validate)
+
+                task.kernelParameters.params = kernelProps.kernelParameters.paramsProvider
             })
         }
     }

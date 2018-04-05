@@ -1,3 +1,26 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2017 Spencer Park
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package io.github.spencerpark.jupyter.gradle.installers
 
 import java.util.regex.Matcher
@@ -28,7 +51,7 @@ class SimpleScriptGenerator {
     // A cached pattern that is null if not yet baked or the tokens change
     private Pattern _tokenPattern = null
 
-    private final StringBuilder _compiledTemplate = new StringBuilder()
+    private StringBuilder _compiledTemplate = new StringBuilder()
     private final String _indentString
     private final String _newLine
     private int _indent = 0
@@ -42,10 +65,14 @@ class SimpleScriptGenerator {
         }
     }
 
-    SimpleScriptGenerator(SimpleScriptGenerator config) {
+    protected SimpleScriptGenerator(SimpleScriptGenerator config) {
         this._indentString = config._indentString
         this._newLine = config._newLine
         this._tokens.putAll(config._tokens)
+    }
+
+    protected SimpleScriptGenerator createDynamicTokenGenerator() {
+        return new SimpleScriptGenerator(this)
     }
 
     Pattern getTokenPattern() {
@@ -61,7 +88,7 @@ class SimpleScriptGenerator {
         if (value == null || !(value.metaClass.respondsTo(value, 'call')))
             return value.toString()
 
-        SimpleScriptGenerator generator = new SimpleScriptGenerator(this)
+        SimpleScriptGenerator generator = createDynamicTokenGenerator()
         value(generator)
 
         return generator.compiled
@@ -193,8 +220,21 @@ class SimpleScriptGenerator {
     }
 
     String compile(String template) {
+        StringBuilder old = this._compiledTemplate
+        int oldIndent = this._indent
+
         StringBuilder into = new StringBuilder()
-        compileInto(into, template)
+
+        this._compiledTemplate = into
+        this._indent = 0
+
+        try {
+            compileInto(into, template)
+        } finally {
+            this._compiledTemplate = old
+            this._indent = oldIndent
+        }
+
         return into.toString()
     }
 
