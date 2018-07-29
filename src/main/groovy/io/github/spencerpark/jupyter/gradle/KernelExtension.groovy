@@ -27,7 +27,10 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.CopySourceSpec
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
+import org.gradle.api.internal.file.copy.CopySpecInternal
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
@@ -36,6 +39,8 @@ import org.gradle.util.ConfigureUtil
 
 @CompileStatic
 class KernelExtension {
+    private final Project _project
+
     private final PropertyState<String> _kernelName
     private final PropertyState<String> _kernelDisplayName
     private final PropertyState<String> _kernelLanguage
@@ -53,6 +58,8 @@ class KernelExtension {
     private final PropertyState<KernelParameterSpecContainer> _kernelParameters
 
     KernelExtension(Project project) {
+        this._project = project
+
         this._kernelName = project.property(String.class)
         this._kernelName.set(project.name)
 
@@ -179,6 +186,13 @@ class KernelExtension {
 
     void setKernelResources(FileCollection kernelResources) {
         this._kernelResources.setFrom(kernelResources)
+    }
+
+    void kernelResources(
+            @DelegatesTo(value = CopySpec, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        CopySpec spec = this._project.copySpec(configureClosure)
+        FileCollection src = (spec as CopySpecInternal).buildRootResolver().allSource
+        this._kernelResources.setFrom(src)
     }
 
 
