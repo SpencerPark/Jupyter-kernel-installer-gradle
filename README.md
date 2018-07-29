@@ -24,7 +24,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.1.7"
+    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:1.1.8"
   }
 }
 
@@ -35,7 +35,7 @@ apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
 
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "1.1.7"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "1.1.8"
 }
 ```
 
