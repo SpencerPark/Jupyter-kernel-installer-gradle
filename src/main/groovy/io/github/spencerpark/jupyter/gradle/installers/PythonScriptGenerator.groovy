@@ -23,7 +23,6 @@
  */
 package io.github.spencerpark.jupyter.gradle.installers
 
-import groovy.json.JsonOutput
 import groovy.json.StringEscapeUtils
 
 class PythonScriptGenerator extends SimpleScriptGenerator {
@@ -54,7 +53,7 @@ class PythonScriptGenerator extends SimpleScriptGenerator {
 
             params.each { InstallerParameterSpec param ->
                 if (param.defaultValue != null) {
-                    out << "getattr($out.argsVariableName, '$out.parsedEnvFieldName').setdefault("
+                    out << "getattr($out.argsVariableName, \"$out.parsedEnvFieldName\").setdefault("
                     out.writeSafeStringLiteral(param.envVar)
                     out << ', '
                     out.writeSafeStringLiteral(param.defaultValue)
@@ -121,7 +120,7 @@ class PythonScriptGenerator extends SimpleScriptGenerator {
     }
 
     private void writeSafeStringLiteral(String s) {
-        this << "'${StringEscapeUtils.escapeJava(s)}'"
+        this << "\"${StringEscapeUtils.escapeJava(s)}\""
     }
 
     private void writeParameterParser(InstallerParameterSpec parameterSpec) {
@@ -130,7 +129,7 @@ class PythonScriptGenerator extends SimpleScriptGenerator {
         this.indented {
             this.writeSafeStringLiteral("--$parameterSpec.name")
             this << ',\n'
-            this << "dest='$parsedEnvFieldName',\n"
+            this << "dest=\"$parsedEnvFieldName\",\n"
             this << 'action=EnvVar,\n'
             this << 'aliases=ALIASES,\n' // TODO these names should probably be configurable to remain consistent
             this << 'name_map=NAME_MAP,\n'
@@ -141,7 +140,7 @@ class PythonScriptGenerator extends SimpleScriptGenerator {
                 this << ',\n'
             }
 
-            this << "type=type_assertion('$parameterSpec.name', "
+            this << "type=type_assertion(\"$parameterSpec.name\", "
             switch (parameterSpec.type) {
                 case InstallerParameterSpec.Type.FLOAT:
                     this << 'float),\n'

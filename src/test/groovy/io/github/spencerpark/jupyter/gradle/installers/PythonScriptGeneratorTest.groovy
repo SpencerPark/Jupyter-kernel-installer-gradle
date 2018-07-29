@@ -52,8 +52,8 @@ class PythonScriptGeneratorTest extends Specification {
 
         descParam = new InstallerParameterSpec('param-7', 'ENV_7')
         descParam.description = '''\
-            A multiline
-            description
+            A "multiline"
+            'description'
         '''.stripIndent()
 
         defaultParam = new InstallerParameterSpec('param-8', 'ENV_8')
@@ -80,11 +80,11 @@ class PythonScriptGeneratorTest extends Specification {
 
         then:
         generator.compiled == [
-                "'ENV_3': {",
-                "    'ON': '1',",
-                "    'OFF': '0',",
-                "}",
-                "",
+                '"ENV_3": {',
+                '    "ON": "1",',
+                '    "OFF": "0",',
+                '},',
+                '',
         ].join('\n')
     }
 
@@ -97,14 +97,14 @@ class PythonScriptGeneratorTest extends Specification {
 
         then:
         compiled == [
-                "    'param-1': 'ENV_1',",
-                "    'param-2': 'ENV_2',",
-                "    'param-3': 'ENV_3',",
-                "    'param-4': 'ENV_4',",
-                "    'param-5': 'ENV_5',",
-                "    'param-6': 'ENV_6',",
-                "    'param-7': 'ENV_7',",
-                "    'param-8': 'ENV_8',",
+                '    "param-1": "ENV_1",',
+                '    "param-2": "ENV_2",',
+                '    "param-3": "ENV_3",',
+                '    "param-4": "ENV_4",',
+                '    "param-5": "ENV_5",',
+                '    "param-6": "ENV_6",',
+                '    "param-7": "ENV_7",',
+                '    "param-8": "ENV_8",',
                 '    ',
         ].join('\n')
     }
@@ -118,18 +118,18 @@ class PythonScriptGeneratorTest extends Specification {
 
         then:
         generator.compiled == [
-                "if not hasattr(args, 'env') or getattr(args, 'env') is None:",
-                "    setattr(args, 'env', {})",
-                "getattr(args, 'env').setdefault('ENV_8', 'DEFAULT')",
-                "",
+                'if not hasattr(args, "env") or getattr(args, "env") is None:',
+                '    setattr(args, "env", {})',
+                'getattr(args, "env").setdefault("ENV_8", "DEFAULT")',
+                '',
         ].join('\n')
     }
 
-    private String argumentCode( Map<String, String> opts, String name) {
+    private static String argumentCode(Map<String, String> opts, String name) {
         def lines = [
                 'parser.add_argument(',
-                "    '--$name',",
-                "    dest='env',",
+                "    \"--$name\",",
+                '    dest="env",',
                 '    action=EnvVar,',
                 '    aliases=ALIASES,',
                 '    name_map=NAME_MAP,',
@@ -153,7 +153,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(strParam.name, type: 'str')
+        generator.compiled == argumentCode(strParam.name, type: 'type_assertion("param-1", str)')
     }
 
     def 'properly generates argument parser for float'() {
@@ -164,7 +164,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(floatParam.name, type: 'float')
+        generator.compiled == argumentCode(floatParam.name, type: 'type_assertion("param-2", float)')
     }
 
     def 'properly generates argument parser for alias'() {
@@ -175,7 +175,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(aliasParam.name, type: 'float')
+        generator.compiled == argumentCode(aliasParam.name, type: 'type_assertion("param-3", float)')
     }
 
     def 'properly generates argument parser for choice'() {
@@ -186,7 +186,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(choiceParam.name, type: 'str', choices: "['a', 'b', 'c', ]")
+        generator.compiled == argumentCode(choiceParam.name, type: 'type_assertion("param-4", str)', choices: '["a", "b", "c", ]')
     }
 
     def 'properly generates argument parser for list'() {
@@ -197,7 +197,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(listParam.name, type: 'str', list_sep: "' '")
+        generator.compiled == argumentCode(listParam.name, type: 'type_assertion("param-5", str)', list_sep: '" "')
     }
 
     def 'properly generates argument parser for file list'() {
@@ -208,7 +208,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(fileListParam.name, type: 'str', list_sep: 'os.sep')
+        generator.compiled == argumentCode(fileListParam.name, type: 'type_assertion("param-6", str)', list_sep: 'os.sep')
     }
 
     def 'properly generates argument parser for desc'() {
@@ -219,7 +219,7 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(descParam.name, help: 'json.loads(\'"A multiline\\ndescription\\n"\')', type: 'str', )
+        generator.compiled == argumentCode(descParam.name, help: '"A \\"multiline\\"\\n\'description\'\\n"', type: 'type_assertion("param-7", str)', )
     }
 
     def 'properly generates argument parser for default'() {
@@ -230,6 +230,6 @@ class PythonScriptGeneratorTest extends Specification {
         generator << '@GENERATED_ARGS@'
 
         then:
-        generator.compiled == this.argumentCode(defaultParam.name, type: 'str')
+        generator.compiled == argumentCode(defaultParam.name, type: 'type_assertion("param-8", str)')
     }
 }
