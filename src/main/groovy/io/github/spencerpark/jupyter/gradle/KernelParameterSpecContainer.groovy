@@ -73,6 +73,11 @@ class KernelParameterSpecContainer {
         this.params.add(spec)
     }
 
+    void string(String name, String environmentVariable) {
+        KernelParameterSpec.StringSpec spec = new KernelParameterSpec.StringSpec(this.project, name, environmentVariable)
+        this.params.add(spec)
+    }
+
     void number(String name, String environmentVariable,
                 @DelegatesTo(value = KernelParameterSpec.NumberSpec, strategy = Closure.DELEGATE_FIRST) Closure configClosure) {
         KernelParameterSpec.NumberSpec spec = new KernelParameterSpec.NumberSpec(this.project, name, environmentVariable)
@@ -83,6 +88,11 @@ class KernelParameterSpecContainer {
     void number(String name, String environmentVariable, Action<? super KernelParameterSpec.NumberSpec> configure) {
         KernelParameterSpec.NumberSpec spec = new KernelParameterSpec.NumberSpec(this.project, name, environmentVariable)
         configure.execute(spec)
+        this.params.add(spec)
+    }
+
+    void number(String name, String environmentVariable) {
+        KernelParameterSpec.NumberSpec spec = new KernelParameterSpec.NumberSpec(this.project, name, environmentVariable)
         this.params.add(spec)
     }
 
@@ -99,6 +109,11 @@ class KernelParameterSpecContainer {
         this.params.add(spec)
     }
 
+    void list(String name, String environmentVariable) {
+        KernelParameterSpec.ListSpec spec = new KernelParameterSpec.ListSpec(this.project, name, environmentVariable)
+        this.params.add(spec)
+    }
+
     void oneOf(String name, String environmentVariable,
                @DelegatesTo(value = KernelParameterSpec.OneOfSpec, strategy = Closure.DELEGATE_FIRST) Closure configClosure) {
         KernelParameterSpec.OneOfSpec spec = new KernelParameterSpec.OneOfSpec(this.project, name, environmentVariable)
@@ -109,6 +124,11 @@ class KernelParameterSpecContainer {
     void oneOf(String name, String environmentVariable, Action<? super KernelParameterSpec.OneOfSpec> configure) {
         KernelParameterSpec.OneOfSpec spec = new KernelParameterSpec.OneOfSpec(this.project, name, environmentVariable)
         configure.execute(spec)
+        this.params.add(spec)
+    }
+
+    void oneOf(String name, String environmentVariable) {
+        KernelParameterSpec.OneOfSpec spec = new KernelParameterSpec.OneOfSpec(this.project, name, environmentVariable)
         this.params.add(spec)
     }
 }

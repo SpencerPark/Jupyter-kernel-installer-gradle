@@ -25,10 +25,12 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
+import org.gradle.api.Nullable
 import org.gradle.api.Project
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 
 @CompileStatic
 abstract class KernelParameterSpec {
@@ -142,6 +144,8 @@ abstract class KernelParameterSpec {
 
 
     @Input
+    @Optional
+    @Nullable
     String getDescription() {
         return this._description.getOrNull()
     }
@@ -178,8 +182,10 @@ abstract class KernelParameterSpec {
 
 
     @Input
+    @Optional
+    @Nullable
     String getDefaultValue() {
-        return this._defaultValue.get()
+        return this._defaultValue.getOrNull()
     }
 
     void setDefaultValue(String defaultValue) {
