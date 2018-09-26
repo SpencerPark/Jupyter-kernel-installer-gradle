@@ -25,6 +25,7 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.CopySourceSpec
@@ -83,13 +84,7 @@ class KernelExtension {
 
         this._kernelResources = project.files(project.fileTree('kernel'))
 
-        this._kernelInstallPath = project.property(File.class)
-        this._kernelInstallPath.set(project.provider {
-            String USER_HOME = System.getProperty('user.home')
-            return new File("$USER_HOME/.ipython")
-        })
-
-        this._kernelParameters = project.property(KernelParameterSpecContainer)
+        this._kernelParameters = project.property(KernelParameterSpecContainer.class)
         this._kernelParameters.set(new KernelParameterSpecContainer(project))
     }
 
@@ -193,19 +188,6 @@ class KernelExtension {
         CopySpec spec = this._project.copySpec(configureClosure)
         FileCollection src = (spec as CopySpecInternal).buildRootResolver().allSource
         this._kernelResources.setFrom(src)
-    }
-
-
-    File getKernelInstallPath() {
-        return this._kernelInstallPath.get()
-    }
-
-    Provider<File> getKernelInstallPathProvider() {
-        return this._kernelInstallPath
-    }
-
-    void setKernelInstallPath(File kernelInstallPath) {
-        this._kernelInstallPath.set(kernelInstallPath)
     }
 
 

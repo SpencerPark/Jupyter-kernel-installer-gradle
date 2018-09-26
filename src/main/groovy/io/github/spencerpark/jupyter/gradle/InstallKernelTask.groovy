@@ -26,23 +26,27 @@ package io.github.spencerpark.jupyter.gradle
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.*
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.util.ConfigureUtil
+
+import java.util.concurrent.Callable
 
 @CompileStatic
 class InstallKernelTask extends DefaultTask {
     private final KernelInstallSpec _kernelInstallSpec
+    private final PropertyState<String> _pythonExecutable
     private final PropertyState<File> _kernelInstallPath
 
     InstallKernelTask() {
         this._kernelInstallSpec = new KernelInstallSpec(super.project)
+        this._pythonExecutable = super.project.property(String.class)
+
         this._kernelInstallPath = super.project.property(File.class)
+        this._kernelInstallPath.set(project.provider(this.defaultInstallPath))
     }
 
 
@@ -63,7 +67,22 @@ class InstallKernelTask extends DefaultTask {
     }
 
 
-    @OutputDirectory
+    @Optional
+    @Input
+    String getPythonExecutable() {
+        return project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) ?: this._pythonExecutable.getOrNull()
+    }
+
+    void setPythonExecutable(String pythonExecutable) {
+        this._pythonExecutable.set(pythonExecutable)
+    }
+
+    void setPythonExecutable(Provider<String> pythonExecutable) {
+        this._pythonExecutable.set(pythonExecutable)
+    }
+
+
+    @Input
     File getKernelInstallPath() {
         return this._kernelInstallPath.get()
     }
@@ -74,6 +93,113 @@ class InstallKernelTask extends DefaultTask {
 
     void setKernelInstallPath(Provider<File> kernelInstallPath) {
         this._kernelInstallPath.set(kernelInstallPath)
+    }
+
+    void setKernelInstallPath(Callable<File> kernelInstallPath) {
+        this._kernelInstallPath.set(project.provider(kernelInstallPath))
+    }
+
+    private String runCommand(String command) {
+        Process process = command.execute()
+        if (process.waitFor() != 0) {
+            String stdout = process.in.text.split('\n').join('\t\n')
+            String stderr = process.err.text.split('\n').join('\t\n')
+            project.logger.error("Failed to execute: $command.\nStdout:\n\t$stdout\nStderr:\n\t$stderr")
+
+            throw new GradleException("Could not get jupyter data-dir.")
+        }
+
+        // Java named these a bit weird, "in" is stdout of the process
+        return process.in.text.trim() + process.err.text.trim()
+    }
+
+    private String getPythonAndCheckValid() {
+        // Use gradle property jupyter.python first, then a system prop, finally fallback to just python3
+        String python = pythonExecutable ?: 'python3'
+
+        if (!runCommand("$python --version").startsWith('Python'))
+            throw new GradleException("Configured python command doesn't look like python: '$python'")
+
+        return python
+    }
+
+    public final Callable<File> userInstallPath = {
+        String python = this.getPythonAndCheckValid()
+
+        String dataDir = this.runCommand("$python -m jupyter --data-dir")
+        return project.file(dataDir).absoluteFile
+    }
+
+    public final Callable<File> sysPrefixInstallPath = {
+        String python = this.getPythonAndCheckValid()
+
+        String prefix = this.runCommand($/$python -c "import sys;print(sys.prefix)"/$)
+        return this.prefixInstallPath(prefix).call()
+    }
+
+    Callable<File> prefixInstallPath(String prefix) {
+        return {
+            def path = [
+                    project.file(prefix).absolutePath,
+                    'share',
+                    'jupyter',
+            ]
+
+            return project.file(path.join(File.separator))
+        }
+    }
+
+    public final Callable<File> legacyInstallPath = {
+        String USER_HOME = System.getProperty('user.home')
+        def path = [
+                project.file(USER_HOME).absolutePath,
+                '.ipython',
+        ]
+
+        return project.file(path.join(File.separator))
+    }
+
+    public final Callable<File> defaultInstallPath = {
+        String python = this.getPythonAndCheckValid()
+
+        String sysDir = runCommand($/$python -c "import jupyter_core.paths as j; print(j.SYSTEM_JUPYTER_PATH[0])"/$)
+        return project.file(sysDir).absoluteFile
+    }
+
+    /**
+     * Attempts to construct a path from the command line as passed in
+     * via a property (-P flag). Special values include:
+     * <ul>
+     * <li>{@code "@USER@"} - {@link #userInstallPath}</li>
+     * <li>{@code "@SYS_PREFIX@"} - {@link #sysPrefixInstallPath}</li>
+     * <li>{@code "@LEGACY@"} - {@link #legacyInstallPath}</li>
+     * <li>{@code ""} - {@link #defaultInstallPath}</li>
+     * <li><i>any prefix path</i> - {@link #prefixInstallPath(String)}</li>
+     * </ul>
+     *
+     * @return the path as resolved according to the rules described above or
+     * {@code null} if the property is unset.
+     */
+    Callable<File> commandLineSpecifiedPath(Callable<File> fallback = this.defaultInstallPath) {
+        return {
+            String pathProp = project.findProperty(PropertyNames.INSTALL_KERNEL_PATH)
+            if (pathProp == null)
+                return fallback.call()
+
+            switch (pathProp) {
+                case '@USER@':
+                    return this.userInstallPath.call()
+                case '@SYS_PREFIX@':
+                    return this.sysPrefixInstallPath.call()
+                case '@LEGACY@':
+                    return this.legacyInstallPath.call()
+                default:
+                    if (pathProp.trim().isEmpty())
+                        return this.defaultInstallPath.call()
+                    else
+                        return this.prefixInstallPath(pathProp).call()
+            }
+        }
     }
 
 
@@ -91,7 +217,6 @@ class InstallKernelTask extends DefaultTask {
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        super.project.copySpec()
         this.writeKernelSpec()
         super.project.copy {
             from this.kernelInstallSpec.kernelResources
@@ -111,4 +236,5 @@ class InstallKernelTask extends DefaultTask {
         File kernelSpec = new File(this.getKernelDirectory(), 'kernel.json')
         kernelSpec.text = spec.toString()
     }
+
 }

@@ -28,7 +28,6 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
 import org.gradle.util.ConfigureUtil
 

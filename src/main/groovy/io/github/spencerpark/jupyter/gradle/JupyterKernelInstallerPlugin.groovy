@@ -58,9 +58,6 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 // references to a value so that they are shared between tasks and configurations.
                 task.kernelInstallSpec(configureInstallProps)
                 task.doFirst(task.kernelInstallSpec.&validate)
-
-                task.kernelInstallPath = kernelProps.kernelInstallPathProvider
-
             })
 
             tasks.create('zipKernel', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
