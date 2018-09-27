@@ -54,8 +54,6 @@ class KernelExtension {
 
     private final ConfigurableFileCollection _kernelResources
 
-    private final PropertyState<File> _kernelInstallPath
-
     private final PropertyState<KernelParameterSpecContainer> _kernelParameters
 
     KernelExtension(Project project) {

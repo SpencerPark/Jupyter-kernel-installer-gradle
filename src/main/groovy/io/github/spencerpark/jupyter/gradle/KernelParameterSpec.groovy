@@ -40,11 +40,31 @@ abstract class KernelParameterSpec {
         StringSpec(Project project, String name, String environmentVariable) {
             super(project, name, environmentVariable)
         }
+
+        @Override
+        void addValueToEnv(String value, Map<String, String> env) {
+            env[super.environmentVariable] = value
+        }
     }
 
     static class NumberSpec extends KernelParameterSpec {
         NumberSpec(Project project, String name, String environmentVariable) {
             super(project, name, environmentVariable)
+        }
+
+        @Override
+        String preProcessAndValidateValue(String value) {
+            try {
+                Double.parseDouble(value)
+            } catch (Exception ignored) {
+                throw new IllegalArgumentException("${super.name} parameter expects a number value but was given '$value'")
+            }
+            return super.preProcessAndValidateValue(value)
+        }
+
+        @Override
+        void addValueToEnv(String value, Map<String, String> env) {
+            env[super.environmentVariable] = value
         }
     }
 
@@ -58,6 +78,28 @@ abstract class KernelParameterSpec {
             super(project, name, environmentVariable)
             this._separator = project.property(String)
             this._separator.set(' ')
+        }
+
+        @Override
+        void addValueToEnv(String value, Map<String, String> env) {
+            env.compute(super.environmentVariable) { _, String current ->
+                if (current == null) return value
+
+                switch (this.separator) {
+                    case PATH_SEPARATOR:
+                        current += File.pathSeparator
+                        break
+                    case FILE_SEPARATOR:
+                        current += File.separator
+                        break
+                    default:
+                        current += this.separator
+                        break
+                }
+
+                current += value
+                return current
+            }
         }
 
         @Input
@@ -89,6 +131,19 @@ abstract class KernelParameterSpec {
             super(project, name, environmentVariable)
             this._values = (project.property(List) as PropertyState<List<String>>)
             this._values.set([])
+        }
+
+        @Override
+        String preProcessAndValidateValue(String value) {
+            if (!(value in this.values))
+                throw new IllegalArgumentException("${super.name} parameter expects one of ${this.values} as a value but was given '$value'")
+
+            return super.preProcessAndValidateValue(value)
+        }
+
+        @Override
+        void addValueToEnv(String value, Map<String, String> env) {
+            env[super.environmentVariable] = value
         }
 
         @Input
@@ -199,4 +254,11 @@ abstract class KernelParameterSpec {
     void defaultValue(String defaultValue) {
         this._defaultValue.set(defaultValue)
     }
+
+
+    String preProcessAndValidateValue(String value) {
+        return this.aliases.getOrDefault(value, value)
+    }
+
+    abstract void addValueToEnv(String value, Map<String, String> env)
 }

@@ -25,6 +25,7 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
+import org.gradle.api.tasks.Input
 
 @CompileStatic
 class KernelJson {
@@ -58,22 +59,27 @@ class KernelJson {
         )
     }
 
+    @Input
     String getInstalledKernelJar() {
         return _installedKernelJar
     }
 
+    @Input
     String getKernelDisplayName() {
         return _kernelDisplayName
     }
 
+    @Input
     String getKernelLanguage() {
         return _kernelLanguage
     }
 
+    @Input
     String getKernelInterruptMode() {
         return _kernelInterruptMode
     }
 
+    @Input
     Map<String, String> getKernelEnv() {
         return _kernelEnvironment
     }

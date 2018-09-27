@@ -29,4 +29,6 @@ import groovy.transform.CompileStatic
 class PropertyNames {
     public static final String INSTALL_KERNEL_PATH = 'installKernel.path'
     public static final String INSTALL_KERNEL_PYTHON = 'installKernel.python'
+
+    public static final String INSTALL_KERNEL_PROP_PREFIX = 'kernelParameter.'
 }

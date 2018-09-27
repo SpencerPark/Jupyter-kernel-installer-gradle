@@ -38,15 +38,19 @@ import java.util.concurrent.Callable
 @CompileStatic
 class InstallKernelTask extends DefaultTask {
     private final KernelInstallSpec _kernelInstallSpec
+    private final KernelParameterSpecContainer _kernelParameters
     private final PropertyState<String> _pythonExecutable
     private final PropertyState<File> _kernelInstallPath
 
     InstallKernelTask() {
         this._kernelInstallSpec = new KernelInstallSpec(super.project)
+
+        this._kernelParameters = new KernelParameterSpecContainer(super.project)
+
         this._pythonExecutable = super.project.property(String.class)
 
         this._kernelInstallPath = super.project.property(File.class)
-        this._kernelInstallPath.set(project.provider(this.defaultInstallPath))
+        this._kernelInstallPath.set(project.provider(this.commandLineSpecifiedPath(this.defaultInstallPath)))
     }
 
 
@@ -64,6 +68,21 @@ class InstallKernelTask extends DefaultTask {
     InstallKernelTask kernelInstallSpec(Action<? super KernelInstallSpec> configure) {
         configure.execute(this._kernelInstallSpec)
         return this
+    }
+
+
+    @Nested
+    KernelParameterSpecContainer getKernelParameters() {
+        return this._kernelParameters
+    }
+
+    void kernelParameters(
+            @DelegatesTo(value = KernelParameterSpecContainer, strategy = Closure.DELEGATE_FIRST) Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.getKernelParameters())
+    }
+
+    void kernelParameters(Action<? extends KernelParameterSpecContainer> configure) {
+        configure.execute(this.getKernelParameters())
     }
 
 
@@ -210,31 +229,70 @@ class InstallKernelTask extends DefaultTask {
     }
 
 
+    @Nested
+    KernelJson getKernelSpec() {
+        Map<String, String> env = new LinkedHashMap<>(this.kernelInstallSpec.kernelEnv) // copy the default
+
+        this.kernelParameters.params.each { param ->
+            boolean handledSomeParam = false
+            Closure<?> handleParamValue = { String value ->
+                handledSomeParam = true
+                value = param.preProcessAndValidateValue(value)
+                param.addValueToEnv(value, env)
+            }
+
+            String value = project.findProperty(PropertyNames.INSTALL_KERNEL_PROP_PREFIX + param.name)
+            if (value != null)
+                handleParamValue(value)
+
+            // Check for usage with an indexed prop
+
+            // Try index 0
+            value = project.findProperty("${PropertyNames.INSTALL_KERNEL_PROP_PREFIX}${param.name}.0")
+            if (value != null)
+                handleParamValue(value)
+
+            // Try index 1 and continue counting up by 1 to get as many props as passed
+            int i = 1
+            value = project.findProperty("${PropertyNames.INSTALL_KERNEL_PROP_PREFIX}${param.name}.$i")
+            while (value != null) {
+                handledSomeParam = true
+                handleParamValue(value)
+                i++
+                value = project.findProperty("${PropertyNames.INSTALL_KERNEL_PROP_PREFIX}${param.name}.$i")
+            }
+
+            // If none of the above attempts to find a property worked and the param has a default value,
+            // just use the default.
+            if (!handledSomeParam && param.defaultValue != null)
+                handleParamValue(param.defaultValue)
+        }
+
+        return new KernelJson(
+                this.getInstalledKernelJar(),
+                this.kernelInstallSpec.kernelDisplayName,
+                this.kernelInstallSpec.kernelLanguage,
+                this.kernelInstallSpec.kernelInterruptMode,
+                env,
+        )
+    }
+
+
     @Internal
-    File getInstalledKernelJar() {
+    private File getInstalledKernelJar() {
         return new File(this.kernelDirectory, this.kernelInstallSpec.kernelExecutable.name)
     }
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        this.writeKernelSpec()
+        File kernelSpecFile = new File(this.getKernelDirectory(), 'kernel.json')
+        kernelSpecFile.text = this.kernelSpec.toString()
+
         super.project.copy {
             from this.kernelInstallSpec.kernelResources
             from this.kernelInstallSpec.kernelExecutable
             into this.getKernelDirectory()
         }
-    }
-
-    private void writeKernelSpec() {
-        KernelJson spec = new KernelJson(
-                this.getInstalledKernelJar(),
-                this.kernelInstallSpec.kernelDisplayName,
-                this.kernelInstallSpec.kernelLanguage,
-                this.kernelInstallSpec.kernelInterruptMode,
-                this.kernelInstallSpec.kernelEnv)
-
-        File kernelSpec = new File(this.getKernelDirectory(), 'kernel.json')
-        kernelSpec.text = spec.toString()
     }
 
 }
