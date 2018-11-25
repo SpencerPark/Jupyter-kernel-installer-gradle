@@ -69,7 +69,7 @@ class KernelExtension {
         this._kernelLanguage.set(this._kernelName)
 
         this._kernelInterruptMode = project.property(String.class)
-        this._kernelInterruptMode.set('signal')
+        this._kernelInterruptMode.set('message')
 
         this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
         this._kernelEnv.set([:])

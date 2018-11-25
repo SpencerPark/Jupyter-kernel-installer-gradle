@@ -80,7 +80,7 @@ jupyter {
 | kernelName          | String                       | `project.name`          | The name of the kernel (the kernel folder)                                                              |
 | kernelDisplayName   | String                       | _kernelName_            | The display name of the kernel                                                                          |
 | kernelLanguage      | String                       | _kernelName_            | The name of the language that the kernel can execute code in                                            |
-| kernelInterruptMode | String                       | `'signal'`              | The desired interrupt mode (`'message'` or `'signal'`)                                                  |
+| kernelInterruptMode | String                       | `'message'`             | The desired interrupt mode (`'message'` or `'signal'`)                                                  |
 | kernelEnv           | Map<String, String>          | `[:]`                   | Environment variable names and values that a kernel may use for configuration                           |
 | kernelExecutable    | File                         | `jar.archivePath`       | The build output that must be invoked to start the kernel                                               |
 | kernelResources     | FileCollection               | `kernel` directory      | The resources that should be included with the kernel such as a `kernel.js`                             |
