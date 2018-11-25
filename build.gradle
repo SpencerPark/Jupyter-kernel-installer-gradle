@@ -9,7 +9,7 @@ group 'io.github.spencerpark'
 version '2.1.0-SNAPSHOT'
 
 wrapper {
-    gradleVersion = '4.0'
+    gradleVersion = '4.6'
     distributionType = Wrapper.DistributionType.ALL
 }
 

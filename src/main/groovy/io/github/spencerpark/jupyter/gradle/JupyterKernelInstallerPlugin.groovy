@@ -25,14 +25,19 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.util.GradleVersion
 
 @CompileStatic
 class JupyterKernelInstallerPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+        if (GradleVersion.current() < GradleVersion.version('4.6'))
+            throw new GradleException("The io.github.spencerpark.jupyter-kernel-installer plugin requires gradle >= 4.6 but this project is using ${GradleVersion.current().version}")
+
         project.with {
             KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
             Action<KernelInstallSpec> configureInstallProps = { KernelInstallSpec installSpec ->
