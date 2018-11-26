@@ -107,7 +107,7 @@ class InstallKernelTask extends DefaultTask {
     void providedParameters(Map<String, Object> providedParameters) {
         Map<String, List<String>> oldParams = this._providedParameters.get()
         Map<String, List<String>> newParams = [:]
-        oldParams.forEach{ String p, List<String> vs -> newParams.put(p, new LinkedList<>(vs)) }
+        oldParams.forEach { String p, List<String> vs -> newParams.put(p, new LinkedList<>(vs)) }
 
         providedParameters.forEach { String p, Object addVs ->
             newParams.compute(p) { _, List<String> vs ->
@@ -123,13 +123,15 @@ class InstallKernelTask extends DefaultTask {
         this._providedParameters.set(newParams)
     }
 
-    @Option(option = 'params', description = 'Add a provided parameter with the form "NAME=VALUE"')
+    @Option(option = 'param', description = 'Add a provided parameter with the form "NAME:VALUE"')
     void addProvidedParams(List<String> serializedParams) {
         Map<String, List<String>> oldParams = this._providedParameters.get()
         Map<String, List<String>> newParams = [:]
-        oldParams.forEach { String p, List<String> vs -> newParams.put(p, new LinkedList<>(vs)) }
+        oldParams.each { String p, List<String> vs ->
+            newParams.put(p, new LinkedList<>(vs))
+        }
 
-        serializedParams.forEach { String serializedParam ->
+        serializedParams.each { String serializedParam ->
             String[] parts = serializedParam.split(':', 2)
 
             if (parts.length != 2)
@@ -137,12 +139,13 @@ class InstallKernelTask extends DefaultTask {
 
             String name = parts[0]
             String value = parts[1]
-            newParams.compute(name) { _, List<String> vs ->
-                if (vs == null)
-                    vs = new LinkedList<>()
-                vs.add(value)
-            }
+
+            List<String> vs = newParams[name] ?: new LinkedList<String>()
+            vs.add(value)
+            newParams[name] = vs
         }
+
+        this._providedParameters.set(newParams)
     }
 
 
@@ -332,7 +335,7 @@ class InstallKernelTask extends DefaultTask {
                 param.addValueToEnv(value, env)
             }
 
-            if (param.name in providedParams) {
+            if (providedParams[param.name] != null) {
                 providedParams[param.name].each(handleParamValue)
                 return
             }
