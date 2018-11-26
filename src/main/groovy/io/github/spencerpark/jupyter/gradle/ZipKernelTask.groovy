@@ -34,6 +34,7 @@ import org.gradle.api.file.FileCopyDetails
 import org.gradle.api.internal.file.collections.FileTreeAdapter
 import org.gradle.api.internal.file.collections.MapFileTree
 import org.gradle.api.internal.file.copy.CopySpecInternal
+import org.gradle.api.internal.tasks.options.Option
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.util.ConfigureUtil
@@ -163,6 +164,12 @@ class ZipKernelTask extends Zip {
     }
 
 
+    @Option(option = 'archive-name', description = 'Set the name of the output archive.')
+    void setArchiveName(String name) {
+        super.setArchiveName(name)
+    }
+
+
     @Nested
     KernelInstallSpec getKernelInstallSpec() {
         return this._kernelInstallSpec
@@ -197,6 +204,16 @@ class ZipKernelTask extends Zip {
 
     Closure<InstallersSpec> getWithoutInstaller() {
         return this._installers.&without
+    }
+
+    @Option(option = 'with', description = 'Include an installer in the zipped bundle.')
+    void withInstaller(List<String> installerName) {
+        this._installers.with(installerName)
+    }
+
+    @Option(option = 'without', description = 'Exclude an installer in the zipped bundle.')
+    void withoutInstaller(List<String> installerName) {
+        this._installers.without(installerName)
     }
 
 

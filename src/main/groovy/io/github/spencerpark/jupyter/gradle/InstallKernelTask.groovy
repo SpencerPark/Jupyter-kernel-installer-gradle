@@ -27,6 +27,7 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.internal.tasks.options.Option
 import org.gradle.api.provider.PropertyState
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
@@ -39,6 +40,7 @@ import java.util.concurrent.Callable
 class InstallKernelTask extends DefaultTask {
     private final KernelInstallSpec _kernelInstallSpec
     private final KernelParameterSpecContainer _kernelParameters
+    private final PropertyState<Map<String, List<String>>> _providedParameters
     private final PropertyState<String> _pythonExecutable
     private final PropertyState<File> _kernelInstallPath
 
@@ -46,6 +48,9 @@ class InstallKernelTask extends DefaultTask {
         this._kernelInstallSpec = new KernelInstallSpec(super.project)
 
         this._kernelParameters = new KernelParameterSpecContainer(super.project)
+
+        this._providedParameters = (super.project.property(Map.class) as PropertyState<Map<String, List<String>>>)
+        this._providedParameters.set(Collections.emptyMap())
 
         this._pythonExecutable = super.project.property(String.class)
 
@@ -86,12 +91,68 @@ class InstallKernelTask extends DefaultTask {
     }
 
 
+    @Input
+    Map<String, List<String>> getProvidedParameters() {
+        return this._providedParameters.get()
+    }
+
+    void setProvidedParameters(Map<String, List<String>> providedParameters) {
+        this._providedParameters.set(providedParameters)
+    }
+
+    void setProvidedParameters(Provider<Map<String, List<String>>> providedParametersProvider) {
+        this._providedParameters.set(providedParametersProvider)
+    }
+
+    void providedParameters(Map<String, Object> providedParameters) {
+        Map<String, List<String>> oldParams = this._providedParameters.get()
+        Map<String, List<String>> newParams = [:]
+        oldParams.forEach{ String p, List<String> vs -> newParams.put(p, new LinkedList<>(vs)) }
+
+        providedParameters.forEach { String p, Object addVs ->
+            newParams.compute(p) { _, List<String> vs ->
+                if (vs == null)
+                    vs = new LinkedList<>()
+                if (addVs instanceof Iterable)
+                    vs.addAll(addVs)
+                else
+                    vs.add(addVs as String)
+            }
+        }
+
+        this._providedParameters.set(newParams)
+    }
+
+    @Option(option = 'params', description = 'Add a provided parameter with the form "NAME=VALUE"')
+    void addProvidedParams(List<String> serializedParams) {
+        Map<String, List<String>> oldParams = this._providedParameters.get()
+        Map<String, List<String>> newParams = [:]
+        oldParams.forEach { String p, List<String> vs -> newParams.put(p, new LinkedList<>(vs)) }
+
+        serializedParams.forEach { String serializedParam ->
+            String[] parts = serializedParam.split(':', 2)
+
+            if (parts.length != 2)
+                throw new IllegalArgumentException("Parameter must be of the form 'NAME=VALUE' but was $serializedParam")
+
+            String name = parts[0]
+            String value = parts[1]
+            newParams.compute(name) { _, List<String> vs ->
+                if (vs == null)
+                    vs = new LinkedList<>()
+                vs.add(value)
+            }
+        }
+    }
+
+
     @Optional
     @Input
     String getPythonExecutable() {
         return project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) ?: this._pythonExecutable.getOrNull()
     }
 
+    @Option(option = 'python', description = 'Set the python executable to use for installing ')
     void setPythonExecutable(String pythonExecutable) {
         this._pythonExecutable.set(pythonExecutable)
     }
@@ -142,6 +203,12 @@ class InstallKernelTask extends DefaultTask {
         return python
     }
 
+    @Option(option = 'user', description = 'Install to the per-user kernel registry.')
+    void setUseUserInstallPath(boolean use) {
+        if (use)
+            this.setKernelInstallPath(this.userInstallPath)
+    }
+
     public final Callable<File> userInstallPath = {
         String python = this.getPythonAndCheckValid()
 
@@ -149,11 +216,22 @@ class InstallKernelTask extends DefaultTask {
         return project.file(dataDir).absoluteFile
     }
 
+    @Option(option = 'sys-prefix', description = 'Install to Python\'s sys.prefix. Useful in conda/virtual environments.')
+    void setUseSysPrefixInstallPath(boolean use) {
+        if (use)
+            this.setKernelInstallPath(this.sysPrefixInstallPath)
+    }
+
     public final Callable<File> sysPrefixInstallPath = {
         String python = this.getPythonAndCheckValid()
 
         String prefix = this.runCommand($/$python -c "import sys;print(sys.prefix)"/$)
         return this.prefixInstallPath(prefix).call()
+    }
+
+    @Option(option = 'prefix', description = 'Specify a prefix to install to, e.g. an env. The kernelspec will be installed in PREFIX/share/jupyter/kernels/')
+    void setUsePrefixInstallPath(String prefix) {
+        this.setKernelInstallPath(this.prefixInstallPath(prefix))
     }
 
     Callable<File> prefixInstallPath(String prefix) {
@@ -168,6 +246,12 @@ class InstallKernelTask extends DefaultTask {
         }
     }
 
+    @Option(option = 'legacy', description = 'Install to $HOME/.ipython. Not recommended but available if needed.')
+    void setUseLegacyInstallPath(boolean use) {
+        if (use)
+            this.setKernelInstallPath(this.legacyInstallPath)
+    }
+
     public final Callable<File> legacyInstallPath = {
         String USER_HOME = System.getProperty('user.home')
         def path = [
@@ -178,10 +262,16 @@ class InstallKernelTask extends DefaultTask {
         return project.file(path.join(File.separator))
     }
 
+    @Option(option = 'default', description = 'Install for all users.')
+    void setUseDefaultInstallPath(boolean use) {
+        if (use)
+            this.setKernelInstallPath(this.defaultInstallPath)
+    }
+
     public final Callable<File> defaultInstallPath = {
         String python = this.getPythonAndCheckValid()
 
-        String sysDir = runCommand($/$python -c "import jupyter_core.paths as j; print(j.SYSTEM_JUPYTER_PATH[0])"/$)
+        String sysDir = this.runCommand($/$python -c "import jupyter_core.paths as j; print(j.SYSTEM_JUPYTER_PATH[0])"/$)
         return project.file(sysDir).absoluteFile
     }
 
@@ -232,6 +322,7 @@ class InstallKernelTask extends DefaultTask {
     @Nested
     KernelJson getKernelSpec() {
         Map<String, String> env = new LinkedHashMap<>(this.kernelInstallSpec.kernelEnv) // copy the default
+        Map<String, List<String>> providedParams = this.getProvidedParameters()
 
         this.kernelParameters.params.each { param ->
             boolean handledSomeParam = false
@@ -239,6 +330,11 @@ class InstallKernelTask extends DefaultTask {
                 handledSomeParam = true
                 value = param.preProcessAndValidateValue(value)
                 param.addValueToEnv(value, env)
+            }
+
+            if (param.name in providedParams) {
+                providedParams[param.name].each(handleParamValue)
+                return
             }
 
             String value = project.findProperty(PropertyNames.INSTALL_KERNEL_PROP_PREFIX + param.name)
