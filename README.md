@@ -26,7 +26,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:2.0.0"
+    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:2.1.0"
   }
 }
 
@@ -37,7 +37,7 @@ apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
 
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "2.0.0"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "2.1.0"
 }
 ```
 
@@ -127,7 +127,7 @@ Try to use the `jupyter` extension defined above as it will configure all tasks 
 ### `installKernel`
 >   Locally install the kernel.
 
-This task installs the kernel on the machine running gradle. It is useful when building during development or installing from source. It can be configured via the `installKernel` closure or with gradle properties passed from the command line with `-Pname=value`.
+This task installs the kernel on the machine running gradle. It is useful when building during development or installing from source. It can be configured via the `installKernel` closure or with the command line options defined below.
 
 | **property**      | **type**                     | **default**                                    | **description**                                                                                  |
 |-------------------|------------------------------|------------------------------------------------|--------------------------------------------------------------------------------------------------|
@@ -136,18 +136,21 @@ This task installs the kernel on the machine running gradle. It is useful when b
 | pythonExecutable  | String                       | `null`                                         | The python command to use when searching for install locations.                                  |
 | kernelInstallPath | File                         | `commandLineSpecifiedPath(defaultInstallPath)` | The installation directory. There are several helper functions for specifying this location.     |
 
-There are several gradle properties (`-Pname=value`) that configure this task just in time.
+There are several command line options that may be used to configure the install location and configuration. They can be listed with the task help command `gradlew -q help --task installKernel` and are as follows:
 
-*   `-PinstallKernel.python=VALUE` sets the `pythonExecutable` to _VALUE_.
-*   `-PinstallKernel.path=VALUE` sets the `kernelInstallPath` **if used in conjunction with the `commandLineSpecifiedPath` function** which is the default for the task. There are some special values that take affect:
-    *   `@USER@` uses `userInstallPath()` (see `jupyter kernelspec install --user`).
-    *   `@SYS_PREFIX@` uses `sysPrefixInstallPath()` (see `jupyter kernelspec install --sys-prefix`).
-    *   `@LEGACY@` uses `legacyInstallPath()` (IPython's `$HOME/.ipython` convention).
-    *   _empty string_ uses `defaultInstallPath()` (see `jupyter kernelspec install`).
-    *   anything else uses `prefixInstallPath(VALUE)` (see `jupyter kernelspec install --prefix=VALUE`).
-    *   _unset_ (not declared at all) uses the fallback value from `commandLineSpecifiedPath` which defaults to .`defaultInstallPath`
-*   `-PkernelParameter.NAME=VALUE` sets the parameter with name _NAME_ to value _VALUE_.
-   *   To specify a list, append `.1` to the first value (e.g. `-PkernelParameter.NAME.1=VALUE_1`) and keep counting up until all the values are specified. **Note:** do not skip any indexes and start at either `0` or `1`, which ever is preferred.
+*   Install path configuration:
+    *   `--python PYTHON`: Set the python executable to use for resolving the `sys.prefix`.
+
+*   Install path:
+    *   `--default`: Install for all users.
+    *   `--user`: Install to the per-user kernel registry.
+    *   `--sys-prefix`: Install to Python's `sys.prefix`. Useful in conda/virtual environments.
+    *   `--prefix PREFIX`: Specify a prefix to install to, e.g. an env. The kernelspec will be installed in `PREFIX/share/jupyter/kernels/`.
+    *   `--path PATH`: Set the path to install the kernel to. The install directory is `$path/$kernelName`.
+    *   `--legacy`: Install to `$HOME/.ipython`. Not recommended but available if needed.
+
+*   Installation configuration:
+    *   `--param "NAME:VALUE"`: Add a provided parameter with the form "NAME:VALUE". This parameter is passed as it would be to an installer. The name is the given name in the `kernelParameters` list. It may be specified multiple times.
 
 ### `zipKernel`
 >   Create a zip with the kernel files.

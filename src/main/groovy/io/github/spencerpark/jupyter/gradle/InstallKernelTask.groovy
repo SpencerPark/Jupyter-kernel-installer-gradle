@@ -155,7 +155,7 @@ class InstallKernelTask extends DefaultTask {
         return project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) ?: this._pythonExecutable.getOrNull()
     }
 
-    @Option(option = 'python', description = 'Set the python executable to use for installing ')
+    @Option(option = 'python', description = 'Set the python executable to use for resolving the `sys.prefix`.')
     void setPythonExecutable(String pythonExecutable) {
         this._pythonExecutable.set(pythonExecutable)
     }
@@ -224,7 +224,7 @@ class InstallKernelTask extends DefaultTask {
         return project.file(dataDir).absoluteFile
     }
 
-    @Option(option = 'sys-prefix', description = 'Install to Python\'s sys.prefix. Useful in conda/virtual environments.')
+    @Option(option = 'sys-prefix', description = 'Install to Python\'s `sys.prefix`. Useful in conda/virtual environments.')
     void setUseSysPrefixInstallPath(boolean use) {
         if (use)
             this.setKernelInstallPath(this.sysPrefixInstallPath)
@@ -237,7 +237,7 @@ class InstallKernelTask extends DefaultTask {
         return this.prefixInstallPath(prefix).call()
     }
 
-    @Option(option = 'prefix', description = 'Specify a prefix to install to, e.g. an env. The kernelspec will be installed in PREFIX/share/jupyter/kernels/')
+    @Option(option = 'prefix', description = 'Specify a prefix to install to, e.g. an env. The kernelspec will be installed in `PREFIX/share/jupyter/kernels/`.')
     void setUsePrefixInstallPath(String prefix) {
         this.setKernelInstallPath(this.prefixInstallPath(prefix))
     }
@@ -254,7 +254,7 @@ class InstallKernelTask extends DefaultTask {
         }
     }
 
-    @Option(option = 'legacy', description = 'Install to $HOME/.ipython. Not recommended but available if needed.')
+    @Option(option = 'legacy', description = 'Install to `$HOME/.ipython`. Not recommended but available if needed.')
     void setUseLegacyInstallPath(boolean use) {
         if (use)
             this.setKernelInstallPath(this.legacyInstallPath)
