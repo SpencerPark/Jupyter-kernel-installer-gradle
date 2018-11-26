@@ -170,6 +170,11 @@ class InstallKernelTask extends DefaultTask {
         return this._kernelInstallPath.get()
     }
 
+    @Option(option = 'path', description = 'Set the path to install the kernel to. The install directory is $path/$kernelName.')
+    void setKernelInstallPath(String kernelInstallPath) {
+        this._kernelInstallPath.set(new File(kernelInstallPath))
+    }
+
     void setKernelInstallPath(File kernelInstallPath) {
         this._kernelInstallPath.set(kernelInstallPath)
     }
