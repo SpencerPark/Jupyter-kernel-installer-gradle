@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # Install the kernel
     install_dest = KernelSpecManager().install_kernel_spec(
-        '@KERNEL_DIRECTORY@',
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '@KERNEL_DIRECTORY@'),
         kernel_name='@KERNEL_NAME@',
         user=args.user,
         prefix=sys.prefix if args.sys_prefix else args.prefix,
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     install_dest_json_fragment = json.dumps(install_dest)[1:-1]
 
     # Prepare the paths to the installed kernel.json and the one bundled with this installer.
-    local_kernel_json_path = os.path.join('@KERNEL_DIRECTORY@', 'kernel.json')
+    local_kernel_json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '@KERNEL_DIRECTORY@', 'kernel.json')
     installed_kernel_json_path = os.path.join(install_dest, 'kernel.json')
 
     # Replace the @KERNEL_INSTALL_DIRECTORY@ token with the path to where the kernel was installed
