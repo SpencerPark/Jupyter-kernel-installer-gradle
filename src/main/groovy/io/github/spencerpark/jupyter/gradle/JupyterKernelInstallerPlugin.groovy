@@ -35,7 +35,7 @@ import org.gradle.util.GradleVersion
 class JupyterKernelInstallerPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
-        if (GradleVersion.current() < GradleVersion.version('4.6'))
+        if (GradleVersion.current() < GradleVersion.version('5.0'))
             throw new GradleException("The io.github.spencerpark.jupyter-kernel-installer plugin requires gradle >= 4.6 but this project is using ${GradleVersion.current().version}")
 
         project.with {

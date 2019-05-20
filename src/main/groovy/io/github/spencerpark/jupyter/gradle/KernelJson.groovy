@@ -25,6 +25,7 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
+import org.gradle.api.file.RegularFile
 import org.gradle.api.tasks.Input
 
 @CompileStatic
@@ -37,8 +38,8 @@ class KernelJson {
     private final String _kernelInterruptMode
     private final Map<String, String> _kernelEnvironment
 
-    KernelJson(File installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
-        this(installedKernelJar.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, interruptMode, kernelEnvironment)
+    KernelJson(RegularFile installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {
+        this(installedKernelJar.asFile.absolutePath.toString().replace(File.separatorChar, '/' as char), kernelDisplayName, kernelLanguage, interruptMode, kernelEnvironment)
     }
 
     KernelJson(String installedKernelJar, String kernelDisplayName, String kernelLanguage, String interruptMode, Map<String, String> kernelEnvironment) {

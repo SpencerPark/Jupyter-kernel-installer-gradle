@@ -25,15 +25,12 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.CopySourceSpec
-import org.gradle.api.file.CopySpec
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.*
 import org.gradle.api.internal.file.copy.CopySpecInternal
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.provider.PropertyState
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.util.ConfigureUtil
@@ -42,48 +39,38 @@ import org.gradle.util.ConfigureUtil
 class KernelExtension {
     private final Project _project
 
-    private final PropertyState<String> _kernelName
-    private final PropertyState<String> _kernelDisplayName
-    private final PropertyState<String> _kernelLanguage
+    private final Property<String> _kernelName
+    private final Property<String> _kernelDisplayName
+    private final Property<String> _kernelLanguage
 
-    private final PropertyState<String> _kernelInterruptMode
+    private final Property<String> _kernelInterruptMode
 
-    private final PropertyState<Map<String, String>> _kernelEnv
+    private final MapProperty<String, String> _kernelEnv
 
-    private final PropertyState<File> _kernelExecutable
+    private final RegularFileProperty _kernelExecutable
 
     private final ConfigurableFileCollection _kernelResources
 
-    private final PropertyState<KernelParameterSpecContainer> _kernelParameters
+    private final Property<KernelParameterSpecContainer> _kernelParameters
 
     KernelExtension(Project project) {
         this._project = project
 
-        this._kernelName = project.property(String.class)
-        this._kernelName.set(project.name)
+        this._kernelName = project.objects.property(String).convention(project.name)
+        this._kernelDisplayName = project.objects.property(String).convention(this._kernelName)
+        this._kernelLanguage = project.objects.property(String).convention(this._kernelName)
 
-        this._kernelDisplayName = project.property(String.class)
-        this._kernelDisplayName.set(this._kernelName)
+        this._kernelInterruptMode = project.objects.property(String).convention('message')
 
-        this._kernelLanguage = project.property(String.class)
-        this._kernelLanguage.set(this._kernelName)
+        this._kernelEnv = project.objects.mapProperty(String, String).convention([:])
 
-        this._kernelInterruptMode = project.property(String.class)
-        this._kernelInterruptMode.set('message')
-
-        this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
-        this._kernelEnv.set([:])
-
-        this._kernelExecutable = project.property(File.class)
-        this._kernelExecutable.set(project.provider {
-            Jar jarTask = project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar
-            return jarTask.archivePath
-        })
+        this._kernelExecutable = project.objects.fileProperty().convention(
+                (project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar).archiveFile)
 
         this._kernelResources = project.files(project.fileTree('kernel'))
 
-        this._kernelParameters = project.property(KernelParameterSpecContainer.class)
-        this._kernelParameters.set(new KernelParameterSpecContainer(project))
+        this._kernelParameters = project.objects.property(KernelParameterSpecContainer).convention(
+                new KernelParameterSpecContainer(project))
     }
 
 
@@ -152,23 +139,26 @@ class KernelExtension {
     }
 
     void kernelEnv(Map<String, String> kernelEnv) {
-        this.getKernelEnv().putAll(kernelEnv)
+        this._kernelEnv.putAll(kernelEnv)
     }
 
     void kernelEnv(Action<? super Map<String, String>> kernelEnvAction) {
-        kernelEnvAction.execute(this.getKernelEnv())
+        Map<String, String> copy = [:]
+        copy.putAll(this._kernelEnv.get())
+        kernelEnvAction.execute(copy)
+        this._kernelEnv.set(copy)
     }
 
 
-    File getKernelExecutable() {
+    RegularFile getKernelExecutable() {
         return this._kernelExecutable.get()
     }
 
-    Provider<File> getKernelExecutableProvider() {
+    Provider<RegularFile> getKernelExecutableProvider() {
         return this._kernelExecutable
     }
 
-    void setKernelExecutable(File file) {
+    void setKernelExecutable(RegularFile file) {
         this._kernelExecutable.set(file)
     }
 

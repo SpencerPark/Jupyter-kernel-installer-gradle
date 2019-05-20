@@ -29,12 +29,14 @@ import io.github.spencerpark.jupyter.gradle.installers.InstallersSpec
 import io.github.spencerpark.jupyter.gradle.installers.PythonScriptGenerator
 import io.github.spencerpark.jupyter.gradle.installers.SimpleScriptGenerator
 import org.gradle.api.Action
+import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCopyDetails
+import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.collections.FileTreeAdapter
-import org.gradle.api.internal.file.collections.MapFileTree
+import org.gradle.api.internal.file.collections.GeneratedSingletonFileTree
 import org.gradle.api.internal.file.copy.CopySpecInternal
-import org.gradle.api.internal.tasks.options.Option
+import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.util.ConfigureUtil
@@ -85,11 +87,10 @@ class ZipKernelTask extends Zip {
         // Thanks org/gradle/jvm/tasks/Jar.java for all your help :)
         this._kernelJson = (CopySpecInternal) getMainSpec().addFirst()
         this._kernelJson.addChild().from {
-            MapFileTree kernelSource = new MapFileTree(getTemporaryDirFactory(), getFileSystem(), getDirectoryFileTreeFactory())
-            kernelSource.add(KERNEL_JSON_PATH, { OutputStream out ->
+            return this.generatedFileTree(KERNEL_JSON_PATH, { OutputStream out ->
                 //noinspection UnnecessaryQualifiedReference Groovy's resolution at runtime cannot find UNSET_PATH_TOKEN unless qualified
                 KernelJson spec = new KernelJson(
-                        "$ZipKernelTask.UNSET_PATH_TOKEN/${this.kernelInstallSpec.kernelExecutable.getName()}",
+                        "$ZipKernelTask.UNSET_PATH_TOKEN/${this.kernelInstallSpec.kernelExecutable.asFile.getName()}",
                         this.kernelInstallSpec.kernelDisplayName,
                         this.kernelInstallSpec.kernelLanguage,
                         this.kernelInstallSpec.kernelInterruptMode,
@@ -97,7 +98,6 @@ class ZipKernelTask extends Zip {
 
                 out.write(spec.toString().getBytes('UTF-8'))
             })
-            return new FileTreeAdapter(kernelSource)
         }
 
         getMainSpec().appendCachingSafeCopyAction { FileCopyDetails details ->
@@ -117,19 +117,21 @@ class ZipKernelTask extends Zip {
 
         CopySpec installerScriptsSpec = getRootSpec().addChild().into('')
         installerScriptsSpec.from {
-            MapFileTree installerScripts = new MapFileTree(getTemporaryDirFactory(), getFileSystem(), getDirectoryFileTreeFactory())
-
             switch (this._installers) {
                 case PYTHON_SCRIPT:
                     PythonScriptGenerator generator = new PythonScriptGenerator()
                     this.kernelParameters.params.each { generator.addParameter(compileParam(it)) }
-                    installerScripts.add('install.py',
-                            loadTemplate('install-scripts/python/install.template.py', generator))
+                    return this.generatedFileTree('install.py', loadTemplate('install-scripts/python/install.template.py', generator))
                     break
             }
 
-            return new FileTreeAdapter(installerScripts)
+            return project.files()
         }
+    }
+
+    private FileTree generatedFileTree(String fileName, Action<OutputStream> generator) {
+        GeneratedSingletonFileTree tree = new GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, generator)
+        return new FileTreeAdapter(tree)
     }
 
     private static InstallerParameterSpec compileParam(KernelParameterSpec kSpec) {

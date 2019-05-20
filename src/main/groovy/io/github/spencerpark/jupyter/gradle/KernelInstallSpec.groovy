@@ -28,7 +28,10 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
-import org.gradle.api.provider.PropertyState
+import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -36,28 +39,28 @@ import org.gradle.api.tasks.InputFiles
 
 @CompileStatic
 class KernelInstallSpec {
-    private final PropertyState<String> _kernelName
-    private final PropertyState<String> _kernelDisplayName
-    private final PropertyState<String> _kernelLanguage
+    private final Property<String> _kernelName
+    private final Property<String> _kernelDisplayName
+    private final Property<String> _kernelLanguage
 
-    private final PropertyState<String> _kernelInterruptMode
+    private final Property<String> _kernelInterruptMode
 
-    private final PropertyState<Map<String, String>> _kernelEnv
+    private final MapProperty<String, String> _kernelEnv
 
-    private final PropertyState<File> _kernelExecutable
+    private final RegularFileProperty _kernelExecutable
 
     private final ConfigurableFileCollection _kernelResources
 
     KernelInstallSpec(Project project) {
-        this._kernelName = project.property(String.class)
-        this._kernelDisplayName = project.property(String.class)
-        this._kernelLanguage = project.property(String.class)
+        this._kernelName = project.objects.property(String)
+        this._kernelDisplayName = project.objects.property(String)
+        this._kernelLanguage = project.objects.property(String)
 
-        this._kernelInterruptMode = project.property(String.class)
+        this._kernelInterruptMode = project.objects.property(String)
 
-        this._kernelEnv = (project.property(Map.class) as PropertyState<Map<String, String>>)
+        this._kernelEnv = project.objects.mapProperty(String, String)
 
-        this._kernelExecutable = project.property(File.class)
+        this._kernelExecutable = project.objects.fileProperty()
 
         this._kernelResources = project.files()
     }
@@ -114,15 +117,15 @@ class KernelInstallSpec {
 
 
     @InputFile
-    File getKernelExecutable() {
+    RegularFile getKernelExecutable() {
         return this._kernelExecutable.get()
     }
 
-    void setKernelExecutable(File kernelExecutable) {
+    void setKernelExecutable(RegularFile kernelExecutable) {
         this._kernelExecutable.set(kernelExecutable)
     }
 
-    void setKernelExecutable(Provider<File> kernelExecutable) {
+    void setKernelExecutable(Provider<RegularFile> kernelExecutable) {
         this._kernelExecutable.set(kernelExecutable)
     }
 

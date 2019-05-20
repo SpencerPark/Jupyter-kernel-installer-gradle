@@ -27,8 +27,13 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.internal.tasks.options.Option
-import org.gradle.api.provider.PropertyState
+import org.gradle.api.file.CopySpec
+import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFile
+import org.gradle.api.tasks.options.Option
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
@@ -40,22 +45,21 @@ import java.util.concurrent.Callable
 class InstallKernelTask extends DefaultTask {
     private final KernelInstallSpec _kernelInstallSpec
     private final KernelParameterSpecContainer _kernelParameters
-    private final PropertyState<Map<String, List<String>>> _providedParameters
-    private final PropertyState<String> _pythonExecutable
-    private final PropertyState<File> _kernelInstallPath
+    private final MapProperty<String, List<String>> _providedParameters
+    private final Property<String> _pythonExecutable
+    private final DirectoryProperty _kernelInstallPath
 
     InstallKernelTask() {
         this._kernelInstallSpec = new KernelInstallSpec(super.project)
 
         this._kernelParameters = new KernelParameterSpecContainer(super.project)
 
-        this._providedParameters = (super.project.property(Map.class) as PropertyState<Map<String, List<String>>>)
-        this._providedParameters.set(Collections.emptyMap())
+        this._providedParameters = super.project.objects.mapProperty(String, List).convention([:]) as MapProperty<String, List<String>>;
 
-        this._pythonExecutable = super.project.property(String.class)
+        this._pythonExecutable = super.project.objects.property(String)
 
-        this._kernelInstallPath = super.project.property(File.class)
-        this._kernelInstallPath.set(project.provider(this.commandLineSpecifiedPath(this.defaultInstallPath)))
+        this._kernelInstallPath = super.project.objects.directoryProperty().convention(
+                project.provider(this.commandLineSpecifiedPath(this.defaultInstallPath)))
     }
 
 
@@ -166,24 +170,24 @@ class InstallKernelTask extends DefaultTask {
 
 
     @Input
-    File getKernelInstallPath() {
+    Directory getKernelInstallPath() {
         return this._kernelInstallPath.get()
     }
 
     @Option(option = 'path', description = 'Set the path to install the kernel to. The install directory is $path/$kernelName.')
     void setKernelInstallPath(String kernelInstallPath) {
-        this._kernelInstallPath.set(new File(kernelInstallPath))
+        this._kernelInstallPath.set(project.layout.projectDirectory.dir(kernelInstallPath))
     }
 
-    void setKernelInstallPath(File kernelInstallPath) {
+    void setKernelInstallPath(Directory kernelInstallPath) {
         this._kernelInstallPath.set(kernelInstallPath)
     }
 
-    void setKernelInstallPath(Provider<File> kernelInstallPath) {
+    void setKernelInstallPath(Provider<Directory> kernelInstallPath) {
         this._kernelInstallPath.set(kernelInstallPath)
     }
 
-    void setKernelInstallPath(Callable<File> kernelInstallPath) {
+    void setKernelInstallPath(Callable<Directory> kernelInstallPath) {
         this._kernelInstallPath.set(project.provider(kernelInstallPath))
     }
 
@@ -217,11 +221,11 @@ class InstallKernelTask extends DefaultTask {
             this.setKernelInstallPath(this.userInstallPath)
     }
 
-    public final Callable<File> userInstallPath = {
+    public final Callable<Directory> userInstallPath = {
         String python = this.getPythonAndCheckValid()
 
         String dataDir = this.runCommand("$python -m jupyter --data-dir")
-        return project.file(dataDir).absoluteFile
+        return project.layout.projectDirectory.dir(dataDir)
     }
 
     @Option(option = 'sys-prefix', description = 'Install to Python\'s `sys.prefix`. Useful in conda/virtual environments.')
@@ -230,7 +234,7 @@ class InstallKernelTask extends DefaultTask {
             this.setKernelInstallPath(this.sysPrefixInstallPath)
     }
 
-    public final Callable<File> sysPrefixInstallPath = {
+    public final Callable<Directory> sysPrefixInstallPath = {
         String python = this.getPythonAndCheckValid()
 
         String prefix = this.runCommand($/$python -c "import sys;print(sys.prefix)"/$)
@@ -242,7 +246,7 @@ class InstallKernelTask extends DefaultTask {
         this.setKernelInstallPath(this.prefixInstallPath(prefix))
     }
 
-    Callable<File> prefixInstallPath(String prefix) {
+    Callable<Directory> prefixInstallPath(String prefix) {
         return {
             def path = [
                     project.file(prefix).absolutePath,
@@ -250,7 +254,7 @@ class InstallKernelTask extends DefaultTask {
                     'jupyter',
             ]
 
-            return project.file(path.join(File.separator))
+            return project.layout.projectDirectory.dir(path.join(File.separator))
         }
     }
 
@@ -260,14 +264,14 @@ class InstallKernelTask extends DefaultTask {
             this.setKernelInstallPath(this.legacyInstallPath)
     }
 
-    public final Callable<File> legacyInstallPath = {
+    public final Callable<Directory> legacyInstallPath = {
         String USER_HOME = System.getProperty('user.home')
         def path = [
                 project.file(USER_HOME).absolutePath,
                 '.ipython',
         ]
 
-        return project.file(path.join(File.separator))
+        return project.layout.projectDirectory.dir(path.join(File.separator))
     }
 
     @Option(option = 'default', description = 'Install for all users.')
@@ -276,11 +280,11 @@ class InstallKernelTask extends DefaultTask {
             this.setKernelInstallPath(this.defaultInstallPath)
     }
 
-    public final Callable<File> defaultInstallPath = {
+    public final Callable<Directory> defaultInstallPath = {
         String python = this.getPythonAndCheckValid()
 
         String sysDir = this.runCommand($/$python -c "import jupyter_core.paths as j; print(j.SYSTEM_JUPYTER_PATH[0])"/$)
-        return project.file(sysDir).absoluteFile
+        return project.layout.projectDirectory.dir(sysDir)
     }
 
     /**
@@ -297,7 +301,7 @@ class InstallKernelTask extends DefaultTask {
      * @return the path as resolved according to the rules described above or
      * {@code null} if the property is unset.
      */
-    Callable<File> commandLineSpecifiedPath(Callable<File> fallback = this.defaultInstallPath) {
+    Callable<Directory> commandLineSpecifiedPath(Callable<Directory> fallback = this.defaultInstallPath) {
         return {
             String pathProp = project.findProperty(PropertyNames.INSTALL_KERNEL_PATH)
             if (pathProp == null)
@@ -321,9 +325,8 @@ class InstallKernelTask extends DefaultTask {
 
 
     @OutputDirectory
-    File getKernelDirectory() {
-        return new File([this.kernelInstallPath.absolutePath, 'kernels', this.kernelInstallSpec.getKernelName()]
-                .join(File.separator))
+    Directory getKernelDirectory() {
+        return this.kernelInstallPath.dir('kernels').dir(this.kernelInstallSpec.getKernelName())
     }
 
 
@@ -383,19 +386,19 @@ class InstallKernelTask extends DefaultTask {
 
 
     @Internal
-    private File getInstalledKernelJar() {
-        return new File(this.kernelDirectory, this.kernelInstallSpec.kernelExecutable.name)
+    private RegularFile getInstalledKernelJar() {
+        return this.kernelDirectory.file(this.kernelInstallSpec.kernelExecutable.asFile.name)
     }
 
     @TaskAction
     void execute(IncrementalTaskInputs inputs) {
-        File kernelSpecFile = new File(this.getKernelDirectory(), 'kernel.json')
-        kernelSpecFile.text = this.kernelSpec.toString()
+        RegularFile kernelSpecFile = this.getKernelDirectory().file('kernel.json')
+        kernelSpecFile.asFile.text = this.kernelSpec.toString()
 
-        super.project.copy {
-            from this.kernelInstallSpec.kernelResources
-            from this.kernelInstallSpec.kernelExecutable
-            into this.getKernelDirectory()
+        super.project.copy { CopySpec spec ->
+            spec.from this.kernelInstallSpec.kernelResources
+            spec.from this.kernelInstallSpec.kernelExecutable
+            spec.into this.kernelDirectory
         }
     }
 

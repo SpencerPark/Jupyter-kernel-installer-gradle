@@ -24,7 +24,8 @@
 package io.github.spencerpark.jupyter.gradle.installers
 
 import groovy.transform.CompileStatic
-import org.gradle.api.Nullable
+
+import javax.annotation.Nullable
 
 @CompileStatic
 class InstallerParameterSpec {

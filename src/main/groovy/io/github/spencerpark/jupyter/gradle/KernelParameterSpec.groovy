@@ -25,9 +25,13 @@ package io.github.spencerpark.jupyter.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
-import org.gradle.api.Nullable
+import org.gradle.api.internal.provider.DefaultPropertyState
+
+import javax.annotation.Nullable
 import org.gradle.api.Project
-import org.gradle.api.provider.PropertyState
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -72,12 +76,11 @@ abstract class KernelParameterSpec {
         private final String PATH_SEPARATOR = '\0\1'
         private final String FILE_SEPARATOR = '\0\2'
 
-        private final PropertyState<String> _separator
+        private final Property<String> _separator
 
         ListSpec(Project project, String name, String environmentVariable) {
             super(project, name, environmentVariable)
-            this._separator = project.property(String)
-            this._separator.set(' ')
+            this._separator = project.objects.property(String).convention(' ')
         }
 
         @Override
@@ -125,12 +128,11 @@ abstract class KernelParameterSpec {
     }
 
     static class OneOfSpec extends KernelParameterSpec {
-        private final PropertyState<List<String>> _values
+        private final ListProperty<String> _values
 
         OneOfSpec(Project project, String name, String environmentVariable) {
             super(project, name, environmentVariable)
-            this._values = (project.property(List) as PropertyState<List<String>>)
-            this._values.set([])
+            this._values = project.objects.listProperty(String).convention([])
         }
 
         @Override
@@ -160,11 +162,11 @@ abstract class KernelParameterSpec {
         }
 
         void values(List<String> values) {
-            this._values.get().addAll(values)
+            this._values.addAll(values)
         }
 
         void value(String value) {
-            this._values.get().add(value)
+            this._values.add(value)
         }
     }
 
@@ -174,20 +176,19 @@ abstract class KernelParameterSpec {
     @Input
     public final String environmentVariable
 
-    private final PropertyState<String> _description
+    private final Property<String> _description
 
-    private final PropertyState<Map<String, String>> _aliases
+    private final MapProperty<String, String> _aliases
 
-    private final PropertyState<String> _defaultValue
+    private final Property<String> _defaultValue
 
     KernelParameterSpec(Project project, String name, String environmentVariable) {
         this.name = name
         this.environmentVariable = environmentVariable
 
-        this._description = project.property(String)
-        this._aliases = (project.property(Map) as PropertyState<Map<String, String>>)
-        this._aliases.set([:])
-        this._defaultValue = project.property(String)
+        this._description = project.objects.property(String)
+        this._aliases = project.objects.mapProperty(String, String).convention([:])
+        this._defaultValue = project.objects.property(String)
 
         if (!environmentVariable.matches(/[a-zA-Z_][a-zA-Z0-9_]*/))
             throw new GradleException("Environment variable name must match '[a-zA-Z_][a-zA-Z0-9_]*' but was '$environmentVariable'")
@@ -232,7 +233,7 @@ abstract class KernelParameterSpec {
     }
 
     void aliases(Map<String, String> aliases) {
-        this.aliases.putAll(aliases)
+        this._aliases.putAll(aliases)
     }
 
 

@@ -12,7 +12,7 @@ That project has an example kernel implementation (including usage with this plu
 
 ### Using the plugin
 
-**Requires Gradle `>=4.6`**
+**Requires Gradle `>=5.0`**
 
 Add the following block to the project's `build.gradle`
 

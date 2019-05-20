@@ -6,10 +6,10 @@ plugins {
 }
 
 group 'io.github.spencerpark'
-version '2.1.0'
+version '3.0.0-SNAPSHOT'
 
 wrapper {
-    gradleVersion = '4.6'
+    gradleVersion = '5.4.1'
     distributionType = Wrapper.DistributionType.ALL
 }
 
