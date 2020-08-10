@@ -1,4 +1,4 @@
-/*
+/**
  * The MIT License (MIT)
  *
  * Copyright (c) 2017 Spencer Park
@@ -23,12 +23,11 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
-import groovy.transform.CompileStatic
-
-@CompileStatic
 class PropertyNames {
-    public static final String INSTALL_KERNEL_PATH = 'installKernel.path'
-    public static final String INSTALL_KERNEL_PYTHON = 'installKernel.python'
+    companion object {
+        const val INSTALL_KERNEL_PATH = "installKernel.path"
+        const val INSTALL_KERNEL_PYTHON = "installKernel.python"
 
-    public static final String INSTALL_KERNEL_PROP_PREFIX = 'kernelParameter.'
+        const val INSTALL_KERNEL_PROP_PREFIX = "kernelParameter."
+    }
 }

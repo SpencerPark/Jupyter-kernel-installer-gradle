@@ -1,4 +1,4 @@
-/*
+/**
  * The MIT License (MIT)
  *
  * Copyright (c) 2017 Spencer Park
@@ -23,7 +23,6 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
-import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -31,16 +30,16 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.util.GradleVersion
 
-@CompileStatic
-class JupyterKernelInstallerPlugin implements Plugin<Project> {
-    @Override
-    void apply(Project project) {
-        if (GradleVersion.current() < GradleVersion.version('5.0'))
-            throw new GradleException("The io.github.spencerpark.jupyter-kernel-installer plugin requires gradle >= 4.6 but this project is using ${GradleVersion.current().version}")
+private val REQUIRED_GRADLE_VERSION = GradleVersion.version("6.0")
 
-        project.with {
-            KernelExtension kernelProps = extensions.create('jupyter', KernelExtension.class, project)
-            Action<KernelInstallSpec> configureInstallProps = { KernelInstallSpec installSpec ->
+class JupyterKernelInstallerPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
+        if (GradleVersion.current() < REQUIRED_GRADLE_VERSION)
+            throw GradleException("The io.github.spencerpark.jupyter-kernel-installer plugin requires gradle >= ${REQUIRED_GRADLE_VERSION.version} but this project is using ${GradleVersion.current().version}")
+
+        with(project) {
+            val kernelProps = extensions.create("jupyter", KernelExtension::class.java, project)
+            val configureInstallProps = Action { installSpec: KernelInstallSpec ->
                 installSpec.setKernelName(kernelProps.getKernelNameProvider())
                 installSpec.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
                 installSpec.setKernelLanguage(kernelProps.getKernelLanguageProvider())
@@ -54,28 +53,28 @@ class JupyterKernelInstallerPlugin implements Plugin<Project> {
                 installSpec.setKernelResources(kernelProps.getKernelResources())
             }
 
-            tasks.create('installKernel', InstallKernelTask.class, (Action<InstallKernelTask>) { InstallKernelTask task ->
-                task.description = 'Locally install the kernel.'
-                task.group = 'jupyter'
+            tasks.create("installKernel", InstallKernelTask::class.java, Action { task: InstallKernelTask ->
+                task.description = "Locally install the kernel."
+                task.group = "jupyter"
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 // Note that this sets the values to **providers**. Essentially the providers act as
                 // references to a value so that they are shared between tasks and configurations.
                 task.kernelInstallSpec(configureInstallProps)
-                task.doFirst(task.kernelInstallSpec.&validate)
+                task.doFirst { task.getKernelInstallSpec().validate() }
 
-                task.kernelParameters.params = kernelProps.kernelParameters.paramsProvider
+                task.getKernelParameters().setParams(kernelProps.getKernelParameters().getParamsProvider())
             })
 
-            tasks.create('zipKernel', ZipKernelTask.class, (Action<ZipKernelTask>) { ZipKernelTask task ->
-                task.description = 'Create a zip with the kernel files.'
-                task.group = 'jupyter'
+            tasks.create("zipKernel", ZipKernelTask::class.java, Action { task: ZipKernelTask ->
+                task.description = "Create a zip with the kernel files."
+                task.group = "jupyter"
                 task.dependsOn(JavaPlugin.JAR_TASK_NAME)
 
                 task.kernelInstallSpec(configureInstallProps)
-                task.doFirst(task.kernelInstallSpec.&validate)
+                task.doFirst { task.kernelInstallSpec.validate() }
 
-                task.kernelParameters.params = kernelProps.kernelParameters.paramsProvider
+                task.kernelParameters.setParams(kernelProps.getKernelParameters().getParamsProvider())
             })
         }
     }

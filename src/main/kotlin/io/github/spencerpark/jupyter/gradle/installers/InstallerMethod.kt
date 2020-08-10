@@ -1,4 +1,4 @@
-/*
+/**
  * The MIT License (MIT)
  *
  * Copyright (c) 2017 Spencer Park
@@ -23,42 +23,36 @@
  */
 package io.github.spencerpark.jupyter.gradle.installers
 
-import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
+import java.util.*
 
-@CompileStatic
-enum InstallerMethod {
-    PYTHON_SCRIPT('python')
+enum class InstallerMethod(vararg val groups: String) {
+    PYTHON_SCRIPT("python");
 
-    private static Map<String, InstallerMethod> BY_NAME
-    private static Map<String, Set<InstallerMethod>> GROUPS_BY_NAME
+    companion object {
+        private val BY_NAME = values()
+                .map { it.name.toLowerCase(Locale.ENGLISH).replace("_", "") to it }
+                .toMap()
+        private val GROUPS_BY_NAME: Map<String, Set<InstallerMethod>> = values()
+                .flatMap { m -> m.groups.map { it to m } }
+                .groupingBy { it.first }
+                .aggregate { _, acc, elem, first ->
+                    if (first) setOf(elem.second) else acc!!.union(setOf(elem.second))
+                }
 
-    InstallerMethod(String... groups) {
-        if (BY_NAME == null) BY_NAME = new HashMap<>()
-        if (GROUPS_BY_NAME == null) GROUPS_BY_NAME = new HashMap<>()
+        fun byName(name: String): Set<InstallerMethod> {
+            val collapsedName = name.replace(Regex("[-_ \t]"), "")
+            val method = BY_NAME[collapsedName]
+            if (method != null)
+                return Collections.singleton(method)
 
-        BY_NAME.put(this.name().toLowerCase().replace('_', ''), this)
-        for (String groupName in groups) {
-            GROUPS_BY_NAME.compute(groupName, { String name, Set<InstallerMethod> group ->
-                group = group ?: new HashSet<InstallerMethod>()
-                group.add(this)
+            val group = GROUPS_BY_NAME[collapsedName]
+            if (group != null)
                 return group
-            })
+
+            throw GradleException("No installer method with name '$name'")
         }
     }
 
-    boolean isCase(InstallersSpec installers) {
-        return this in installers
-    }
-
-    static Set<InstallerMethod> byName(String name) {
-        String collapsedName = name.replaceAll(~/[-_ \t]/, '')
-        InstallerMethod method = BY_NAME.get(collapsedName)
-        if (method != null) return Collections.singleton(method)
-
-        Set<InstallerMethod> group = GROUPS_BY_NAME.get(collapsedName)
-        if (group != null) return group
-
-        throw new GradleException("No installer method with name '$name'")
-    }
+    fun isCase(installers: InstallersSpec) = this in installers
 }

@@ -1,4 +1,4 @@
-/*
+/**
  * The MIT License (MIT)
  *
  * Copyright (c) 2017 Spencer Park
@@ -23,58 +23,40 @@
  */
 package io.github.spencerpark.jupyter.gradle.installers
 
-import groovy.transform.CompileStatic
-
-import javax.annotation.Nullable
-
-@CompileStatic
-class InstallerParameterSpec {
-    public static final String PATH_SEPARATOR = '\0\1'
-    public static final String FILE_SEPARATOR = '\0\2'
-
-    enum Type { STRING, FLOAT }
-
-    String name
-    String envVar
-    @Nullable String description
-    @Nullable String defaultValue
-    private Type _type = Type.STRING
-    @Nullable String listSep
-    @Nullable List<String> choices
-    @Nullable Map<String, String> aliases
-
-    InstallerParameterSpec(String name, String envVar) {
-        this.name = name
-        this.envVar = envVar
+class InstallerParameterSpec(
+        var name: String,
+        var envVar: String,
+        var description: String? = null,
+        var defaultValue: String? = null,
+        var type: Type = Type.STRING,
+        var listSep: String? = null,
+        var choices: MutableList<String>? = null,
+        var aliases: MutableMap<String, String>? = null
+) {
+    companion object {
+        const val PATH_SEPARATOR = "\u0000\u0001"
+        const val FILE_SEPARATOR = "\u0000\u0002"
     }
 
-    Type getType() {
-        return this._type
-    }
+    enum class Type { STRING, FLOAT }
 
-    void setType(Type type) {
-        if (type == null)
-            type = Type.STRING
-        this._type = type
-    }
-
-    void usePathSeparator() {
+    fun usePathSeparator() {
         this.listSep = PATH_SEPARATOR
     }
 
-    void useFileSeparator() {
+    fun useFileSeparator() {
         this.listSep = FILE_SEPARATOR
     }
 
-    void addChoice(String choice) {
+    fun addChoice(choice: String) {
         if (this.choices == null)
-            this.choices = []
-        this.choices.add(choice)
+            this.choices = mutableListOf()
+        this.choices!!.add(choice)
     }
 
-    void addAlias(String name, String replacement) {
+    fun addAlias(name: String, replacement: String) {
         if (this.aliases == null)
-            this.aliases = [:]
-        this.aliases.put(name, replacement)
+            this.aliases = mutableMapOf()
+        this.aliases!!.put(name, replacement)
     }
 }
