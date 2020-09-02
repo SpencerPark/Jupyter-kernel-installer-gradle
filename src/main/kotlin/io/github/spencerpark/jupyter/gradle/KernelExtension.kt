@@ -27,68 +27,43 @@ import groovy.lang.Closure
 import groovy.lang.DelegatesTo
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.RegularFile
-import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.provider.Provider
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.bundling.Jar
 import org.gradle.util.ConfigureUtil
+import javax.inject.Inject
 
-open class KernelExtension(private val project: Project) {
-    private val _kernelName = project.objects.property(String::class.java).convention(project.name)
-    private val _kernelDisplayName = project.objects.property(String::class.java).convention(_kernelName)
-    private val _kernelLanguage = project.objects.property(String::class.java).convention(_kernelName)
+open class KernelExtension @Inject constructor(project: Project, objects: ObjectFactory) : WithGradleDslExtensions {
+    val kernelName: Property<String> = objects.property(String::class.java).convention(project.name)
+    val kernelDisplayName: Property<String> = objects.property(String::class.java).convention(kernelName)
+    val kernelLanguage: Property<String> = objects.property(String::class.java).convention(kernelName)
 
-    private val _kernelInterruptMode = project.objects.property(String::class.java).convention("message")
+    val kernelInterruptMode: Property<String> = objects.property(String::class.java).convention("message")
 
-    private val _kernelEnv = project.objects.mapProperty(String::class.java, String::class.java).convention(mapOf())
+    val kernelEnv: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
 
-    private val _kernelExecutable = project.objects.fileProperty().convention((project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar).archiveFile)
+    val kernelExecutable: RegularFileProperty = objects.fileProperty()//.convention((project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar).archiveFile)
 
-    private val _kernelResources = project.files(project.fileTree("kernel"))
+    val kernelResources: ConfigurableFileCollection = project.files(project.fileTree("kernel"))
 
-    private val _kernelParameters = project.objects.property(KernelParameterSpecContainer::class.java).convention(KernelParameterSpecContainer(project))
+    val kernelParameters: KernelParameterSpecContainer = KernelParameterSpecContainer(objects)
 
-    fun getKernelName(): String = this._kernelName.get()
-    fun getKernelNameProvider(): Provider<String> = this._kernelName
-    fun setKernelName(kernelName: String) = this._kernelName.set(kernelName)
+    fun kernelEnv(kernelEnv: Map<String, String>) = this.kernelEnv.putAll(kernelEnv)
+    fun kernelEnv(configure: Action<in MutableMap<String, String>>) = this.kernelEnv.set(this.kernelEnv.get().also(configure::execute))
 
-    fun getKernelDisplayName(): String = this._kernelDisplayName.get()
-    fun getKernelDisplayNameProvider(): Provider<String> = this._kernelDisplayName
-    fun setKernelDisplayName(kernelDisplayName: String) = this._kernelDisplayName.set(kernelDisplayName)
-
-    fun getKernelLanguage(): String = this._kernelLanguage.get()
-    fun getKernelLanguageProvider(): Provider<String> = this._kernelLanguage
-    fun setKernelLanguage(kernelLanguage: String) = this._kernelLanguage.set(kernelLanguage)
-
-    fun getKernelInterruptMode(): String = this._kernelInterruptMode.get()
-    fun getKernelInterruptModeProvider(): Provider<String> = this._kernelInterruptMode
-    fun setKernelInterruptMode(kernelInterruptMode: String) = this._kernelInterruptMode.set(kernelInterruptMode)
-
-    fun getKernelEnv(): Map<String, String> = this._kernelEnv.get()
-    fun getKernelEnvProvider(): Provider<Map<String, String>> = this._kernelEnv
-    fun setKernelEnv(kernelEnv: Map<String, String>) = this._kernelEnv.set(kernelEnv)
-    fun kernelEnv(kernelEnv: Map<String, String>) = this._kernelEnv.putAll(kernelEnv)
-    fun kernelEnv(configure: Action<in MutableMap<String, String>>) = this._kernelEnv.set(this.getKernelEnv().toMutableMap().also(configure::execute))
-
-    fun getKernelExecutable(): RegularFile = this._kernelExecutable.get()
-    fun getKernelExecutableProvider(): Provider<RegularFile> = this._kernelExecutable
-    fun setKernelExecutable(file: RegularFile) = this._kernelExecutable.set(file)
-
-    fun getKernelResources(): FileCollection = this._kernelResources
-    fun setKernelResources(kernelResources: FileCollection) = this._kernelResources.setFrom(kernelResources)
-    fun kernelResources(configure: Action<in CopySpec>) = this._kernelResources.setFrom(Copy().also(configure::execute).source)
+    fun setKernelResources(kernelResources: FileCollection) = this.kernelResources.setFrom(kernelResources)
+    fun kernelResources(configure: Action<in CopySpec>) = this.kernelResources.setFrom(Copy().also(configure::execute).source)
     fun kernelResources(@DelegatesTo(value = CopySpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
-        this._kernelResources.setFrom(ConfigureUtil.configure(configureClosure, Copy()).source)
+        this.kernelResources.setFrom(ConfigureUtil.configure(configureClosure, Copy()).source)
     }
 
-    fun getKernelParameters(): KernelParameterSpecContainer = this._kernelParameters.get()
-    fun getKernelParametersProvider(): Provider<KernelParameterSpecContainer> = this._kernelParameters
-    fun setKernelParameters(kernelParameters: KernelParameterSpecContainer) = this._kernelParameters.set(kernelParameters)
-    fun kernelParameters(configure: Action<in KernelParameterSpecContainer>) = configure.execute(this.getKernelParameters())
+    fun kernelParameters(configure: Action<in KernelParameterSpecContainer>) = configure.execute(this.kernelParameters)
     fun kernelParameters(@DelegatesTo(value = KernelParameterSpecContainer::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
-        ConfigureUtil.configure(configureClosure, this.getKernelParameters())
+        ConfigureUtil.configure(configureClosure, this.kernelParameters)
     }
 }

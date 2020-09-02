@@ -43,7 +43,6 @@ interface Document {
     fun append(value: String)
 
     operator fun plusAssign(value: String) {
-        println("plusAssign")
         this.append(value)
     }
 

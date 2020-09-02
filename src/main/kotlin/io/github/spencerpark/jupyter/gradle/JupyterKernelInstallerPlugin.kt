@@ -28,6 +28,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.util.GradleVersion
 
 private val REQUIRED_GRADLE_VERSION = GradleVersion.version("6.0")
@@ -37,46 +38,60 @@ class JupyterKernelInstallerPlugin : Plugin<Project> {
         if (GradleVersion.current() < REQUIRED_GRADLE_VERSION)
             throw GradleException("The io.github.spencerpark.jupyter-kernel-installer plugin requires gradle >= ${REQUIRED_GRADLE_VERSION.version} but this project is using ${GradleVersion.current().version}")
 
-        with(project) {
-            val kernelProps = extensions.create("jupyter", KernelExtension::class.java, project)
-            val configureInstallProps = Action { installSpec: KernelInstallSpec ->
-                installSpec.setKernelName(kernelProps.getKernelNameProvider())
-                installSpec.setKernelDisplayName(kernelProps.getKernelDisplayNameProvider())
-                installSpec.setKernelLanguage(kernelProps.getKernelLanguageProvider())
+        val kernelExtension = project.extensions.create("jupyter", KernelExtension::class.java, project)
+        val configureInstallProps = Action { installSpec: KernelInstallSpec ->
+            installSpec.kernelName.convention(kernelExtension.kernelName)
+            installSpec.kernelDisplayName.convention(kernelExtension.kernelDisplayName)
+            installSpec.kernelLanguage.convention(kernelExtension.kernelLanguage)
 
-                installSpec.setKernelInterruptMode(kernelProps.getKernelInterruptModeProvider())
+            installSpec.kernelInterruptMode.convention(kernelExtension.kernelInterruptMode)
 
-                installSpec.setKernelEnv(kernelProps.getKernelEnvProvider())
+            installSpec.kernelEnv.convention(kernelExtension.kernelEnv)
 
-                installSpec.setKernelExecutable(kernelProps.getKernelExecutableProvider())
+            installSpec.kernelExecutable.convention(kernelExtension.kernelExecutable)
 
-                installSpec.setKernelResources(kernelProps.getKernelResources())
-            }
+            installSpec.setKernelResources(kernelExtension.kernelResources)
+        }
 
-            tasks.create("installKernel", InstallKernelTask::class.java, Action { task: InstallKernelTask ->
-                task.description = "Locally install the kernel."
-                task.group = "jupyter"
-                task.dependsOn(JavaPlugin.JAR_TASK_NAME)
+        project.tasks.create("installKernel", InstallKernelTask::class.java) { task: InstallKernelTask ->
+            task.description = "Locally install the kernel."
+            task.group = "jupyter"
 
-                // Note that this sets the values to **providers**. Essentially the providers act as
-                // references to a value so that they are shared between tasks and configurations.
-                task.kernelInstallSpec(configureInstallProps)
-                task.doFirst { task.getKernelInstallSpec().validate() }
+            // Note that this sets the values to **providers**. Essentially the providers act as
+            // references to a value so that they are shared between tasks and configurations.
+            task.kernelInstallSpec(configureInstallProps)
+            task.doFirst { task.kernelInstallSpec.validate() }
 
-                task.getKernelParameters().setParams(kernelProps.getKernelParameters().getParamsProvider())
-            })
+            task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
+        }
 
-            tasks.create("zipKernel", ZipKernelTask::class.java, Action { task: ZipKernelTask ->
-                task.description = "Create a zip with the kernel files."
-                task.group = "jupyter"
-                task.dependsOn(JavaPlugin.JAR_TASK_NAME)
+        project.tasks.create("zipKernel", ZipKernelTask::class.java) { task: ZipKernelTask ->
+            task.description = "Create a zip with the kernel files."
+            task.group = "jupyter"
 
-                task.kernelInstallSpec(configureInstallProps)
-                task.doFirst { task.kernelInstallSpec.validate() }
+            task.kernelInstallSpec(configureInstallProps)
+            task.doFirst { task.kernelInstallSpec.validate() }
 
-                task.kernelParameters.setParams(kernelProps.getKernelParameters().getParamsProvider())
-            })
+            task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
+        }
+
+        // If the java plugin was already applied, hook up the executable as the default executable for
+        // the extension.
+        project.plugins.withType(JavaPlugin::class.java, ApplyJavaConvention(project, kernelExtension))
+    }
+}
+
+private class ApplyJavaConvention(val project: Project, val kernelExtension: KernelExtension): Action<JavaPlugin>  {
+    override fun execute(java: JavaPlugin) {
+        kernelExtension.kernelExecutable.convention((project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar).archiveFile)
+
+        project.tasks.withType(InstallKernelTask::class.java).configureEach {
+            it.dependsOn(JavaPlugin.JAR_TASK_NAME)
+        }
+        project.tasks.withType(ZipKernelTask::class.java).configureEach {
+            it.dependsOn(JavaPlugin.JAR_TASK_NAME)
         }
     }
+
 }
 

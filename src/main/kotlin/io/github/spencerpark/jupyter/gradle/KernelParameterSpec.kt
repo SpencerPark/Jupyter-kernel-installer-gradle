@@ -24,23 +24,25 @@
 package io.github.spencerpark.jupyter.gradle
 
 import org.gradle.api.GradleException
-import org.gradle.api.Project
-import org.gradle.api.provider.Provider
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import java.io.File
-import javax.annotation.Nullable
 
 private val KEYWORDS = setOf("user", "sys-prefix", "prefix", "replace", "help")
 
 sealed class KernelParameterSpec(
-        project: Project,
+        objects: ObjectFactory,
         @Input val name: String,
         @Input val environmentVariable: String
 ) {
-    private val _description = project.objects.property(String::class.java)
-    private val _aliases = project.objects.mapProperty(String::class.java, String::class.java).convention(mapOf())
-    private val _defaultValue = project.objects.property(String::class.java)
+    @Input @Optional val description: Property<String> = objects.property(String::class.java)
+    @Input
+    val aliases: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
+    @Input @Optional val defaultValue: Property<String> = objects.property(String::class.java)
 
     init {
         if (!environmentVariable.matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*")))
@@ -51,41 +53,23 @@ sealed class KernelParameterSpec(
             throw GradleException("Name cannot be one of $KEYWORDS but was '$name'")
     }
 
-    @Input
-    @Optional
-    @Nullable
-    fun getDescription() = this._description.orNull
-    fun setDescription(description: String?) = this._description.set(description)
-    fun setDescription(description: Provider<String>) = this._description.set(description)
-    fun description(description: String?) = this._description.set(description)
+    fun description(description: String?) = this.description.set(description)
+    fun aliases(aliases: Map<String, String>) = this.aliases.putAll(aliases)
+    fun defaultValue(defaultValue: String?) = this.defaultValue.set(defaultValue)
 
-    @Input
-    fun getAliases(): Map<String, String> = this._aliases.get()
-    fun setAliases(aliases: Map<String, String>) = this._aliases.set(aliases)
-    fun setAliases(aliases: Provider<Map<String, String>>) = this._aliases.set(aliases)
-    fun aliases(aliases: Map<String, String>) = this._aliases.putAll(aliases)
-
-    @Input
-    @Optional
-    @Nullable
-    fun getDefaultValue() = this._defaultValue.orNull
-    fun setDefaultValue(defaultValue: String?) = this._defaultValue.set(defaultValue)
-    fun setDefaultValue(defaultValue: Provider<String>) = this._defaultValue.set(defaultValue)
-    fun defaultValue(defaultValue: String?) = this._defaultValue.set(defaultValue)
-
-    open fun preProcessAndValidateValue(value: String): String = getAliases().getOrDefault(value, value)
+    open fun preProcessAndValidateValue(value: String): String = aliases.get().getOrDefault(value, value)
 
     abstract fun addValueToEnv(value: String, env: MutableMap<String, String>)
 }
 
 
-class StringSpec(project: Project, name: String, environmentVariable: String) : KernelParameterSpec(project, name, environmentVariable) {
+class StringSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     override fun addValueToEnv(value: String, env: MutableMap<String, String>) {
         env[super.environmentVariable] = value
     }
 }
 
-class NumberSpec(project: Project, name: String, environmentVariable: String) : KernelParameterSpec(project, name, environmentVariable) {
+class NumberSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     override fun preProcessAndValidateValue(value: String): String {
         value.toDoubleOrNull() ?: throw GradleException("$name parameter expects a number value but was given '$value'")
         return super.preProcessAndValidateValue(value)
@@ -96,27 +80,23 @@ class NumberSpec(project: Project, name: String, environmentVariable: String) : 
     }
 }
 
-private const val PATH_SEPARATOR = "\u0000\u0001"
-private const val FILE_SEPARATOR = "\u0000\u0002"
+class ListSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+    val PATH_SEPARATOR = "\u0000\u0001"
+    val FILE_SEPARATOR = "\u0000\u0002"
 
-class ListSpec(project: Project, name: String, environmentVariable: String) : KernelParameterSpec(project, name, environmentVariable) {
-    private val _separator = project.objects.property(String::class.java).convention(" ")
+    @Input val separator = objects.property(String::class.java).convention(" ")
 
-    @Input
-    fun getSeparator(): String = this._separator.get()
-    fun setSeparator(separator: String) = this._separator.set(separator)
-    fun setSeparator(separator: Provider<String>) = this._separator.set(separator)
-    fun usePathSeparator() = this._separator.set(PATH_SEPARATOR)
-    fun useFileSeparator() = this._separator.set(FILE_SEPARATOR)
+    fun usePathSeparator() = this.separator.set(PATH_SEPARATOR)
+    fun useFileSeparator() = this.separator.set(FILE_SEPARATOR)
 
     override fun addValueToEnv(value: String, env: MutableMap<String, String>) {
         env.compute(super.environmentVariable) { _, _current ->
             var current = _current ?: return@compute value
 
-            current += when (this.getSeparator()) {
+            current += when (this.separator.get()) {
                 PATH_SEPARATOR -> File.pathSeparator
                 FILE_SEPARATOR -> File.separator
-                else -> this.getSeparator()
+                else -> this.separator.get()
             }
 
             current += value
@@ -125,19 +105,15 @@ class ListSpec(project: Project, name: String, environmentVariable: String) : Ke
     }
 }
 
-class OneOfSpec(project: Project, name: String, environmentVariable: String) : KernelParameterSpec(project, name, environmentVariable) {
-    private val _values = project.objects.listProperty(String::class.java).convention(listOf())
+class OneOfSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+    @Input val values: ListProperty<String> = objects.listProperty(String::class.java).convention(mutableListOf())
 
-    @Input
-    fun getValues(): List<String> = this._values.get()
-    fun setValues(values: List<String>) = this._values.set(values)
-    fun setValues(values: Provider<List<String>>) = this._values.set(values)
-    fun values(values: List<String>) = this._values.addAll(values)
-    fun value(value: String) = this._values.add(value)
+    fun values(values: List<String>) = this.values.addAll(values)
+    fun value(value: String) = this.values.add(value)
 
     override fun preProcessAndValidateValue(value: String): String {
-        if (value !in this.getValues())
-            throw GradleException("$name parameter expects one of ${this.getValues()} as a value but was given '$value'")
+        if (value !in this.values.get())
+            throw GradleException("$name parameter expects one of ${this.values.get()} as a value but was given '$value'")
 
         return super.preProcessAndValidateValue(value)
     }

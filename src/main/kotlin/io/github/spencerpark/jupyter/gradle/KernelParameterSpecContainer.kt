@@ -26,35 +26,29 @@ package io.github.spencerpark.jupyter.gradle
 import groovy.lang.Closure
 import groovy.lang.DelegatesTo
 import org.gradle.api.Action
-import org.gradle.api.Project
-import org.gradle.api.provider.Provider
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.util.ConfigureUtil
 
-class KernelParameterSpecContainer(private val project: Project) {
-    private val _params = project.objects.listProperty(KernelParameterSpec::class.java).convention(listOf())
+class KernelParameterSpecContainer(private val objects: ObjectFactory) {
+    @Internal @Nested
+    val params: ListProperty<KernelParameterSpec> = objects.listProperty(KernelParameterSpec::class.java).convention(mutableListOf())
 
-    @Nested
-    fun getParams(): List<KernelParameterSpec> = this._params.get()
-    @Internal
-    fun getParamsProvider(): Provider<List<KernelParameterSpec>> = this._params
-    fun setParams(params: List<KernelParameterSpec>) = this._params.set(params)
-    fun setParams(params: Provider<List<KernelParameterSpec>>) = this._params.set(params)
+    fun string(name: String, environmentVariable: String) = params.add(StringSpec(objects, name, environmentVariable))
+    fun string(name: String, environmentVariable: String, configure: Action<in StringSpec>) = this.params.add(StringSpec(objects, name, environmentVariable).also(configure::execute))
+    fun string(name: String, environmentVariable: String, @DelegatesTo(value = StringSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this.params.add(ConfigureUtil.configure(configureClosure, StringSpec(objects, name, environmentVariable)))
 
-    fun string(name: String, environmentVariable: String) = this._params.add(StringSpec(project, name, environmentVariable))
-    fun string(name: String, environmentVariable: String, configure: Action<in StringSpec>) = this._params.add(StringSpec(project, name, environmentVariable).also(configure::execute))
-    fun string(name: String, environmentVariable: String, @DelegatesTo(value = StringSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this._params.add(ConfigureUtil.configure(configureClosure, StringSpec(project, name, environmentVariable)))
+    fun number(name: String, environmentVariable: String) = this.params.add(NumberSpec(objects, name, environmentVariable))
+    fun number(name: String, environmentVariable: String, configure: Action<in NumberSpec>) = this.params.add(NumberSpec(objects, name, environmentVariable).also(configure::execute))
+    fun number(name: String, environmentVariable: String, @DelegatesTo(value = NumberSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this.params.add(ConfigureUtil.configure(configureClosure, NumberSpec(objects, name, environmentVariable)))
 
-    fun number(name: String, environmentVariable: String) = this._params.add(NumberSpec(project, name, environmentVariable))
-    fun number(name: String, environmentVariable: String, configure: Action<in NumberSpec>) = this._params.add(NumberSpec(project, name, environmentVariable).also(configure::execute))
-    fun number(name: String, environmentVariable: String, @DelegatesTo(value = NumberSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this._params.add(ConfigureUtil.configure(configureClosure, NumberSpec(project, name, environmentVariable)))
+    fun list(name: String, environmentVariable: String) = this.params.add(ListSpec(objects, name, environmentVariable))
+    fun list(name: String, environmentVariable: String, configure: Action<in ListSpec>) = this.params.add(ListSpec(objects, name, environmentVariable).also(configure::execute))
+    fun list(name: String, environmentVariable: String, @DelegatesTo(value = ListSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this.params.add(ConfigureUtil.configure(configureClosure, ListSpec(objects, name, environmentVariable)))
 
-    fun list(name: String, environmentVariable: String) = this._params.add(ListSpec(project, name, environmentVariable))
-    fun list(name: String, environmentVariable: String, configure: Action<in ListSpec>) = this._params.add(ListSpec(project, name, environmentVariable).also(configure::execute))
-    fun list(name: String, environmentVariable: String, @DelegatesTo(value = ListSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this._params.add(ConfigureUtil.configure(configureClosure, ListSpec(project, name, environmentVariable)))
-
-    fun oneOf(name: String, environmentVariable: String) = this._params.add(OneOfSpec(project, name, environmentVariable))
-    fun oneOf(name: String, environmentVariable: String, configure: Action<in OneOfSpec>) = this._params.add(OneOfSpec(project, name, environmentVariable).also(configure::execute))
-    fun oneOf(name: String, environmentVariable: String, @DelegatesTo(value = OneOfSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this._params.add(ConfigureUtil.configure(configureClosure, OneOfSpec(project, name, environmentVariable)))
+    fun oneOf(name: String, environmentVariable: String) = this.params.add(OneOfSpec(objects, name, environmentVariable))
+    fun oneOf(name: String, environmentVariable: String, configure: Action<in OneOfSpec>) = this.params.add(OneOfSpec(objects, name, environmentVariable).also(configure::execute))
+    fun oneOf(name: String, environmentVariable: String, @DelegatesTo(value = OneOfSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) = this.params.add(ConfigureUtil.configure(configureClosure, OneOfSpec(objects, name, environmentVariable)))
 }

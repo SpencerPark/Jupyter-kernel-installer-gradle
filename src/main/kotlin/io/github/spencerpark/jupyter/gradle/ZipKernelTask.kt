@@ -35,13 +35,15 @@ import org.gradle.api.Action
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.collections.FileTreeAdapter
 import org.gradle.api.internal.file.collections.GeneratedSingletonFileTree
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.options.Option
 import org.gradle.util.ConfigureUtil
 import java.io.OutputStream
+import javax.inject.Inject
 
-open class ZipKernelTask : Zip() {
+open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), WithGradleDslExtensions {
     companion object {
         /**
          * A placeholder identifier that is added into the kernel.json to be replaced when installed. The
@@ -57,15 +59,15 @@ open class ZipKernelTask : Zip() {
 
         private fun compileParam(kSpec: KernelParameterSpec): InstallerParameterSpec {
             val iSpec = InstallerParameterSpec(kSpec.name, kSpec.environmentVariable)
-            iSpec.description = kSpec.getDescription()
-            iSpec.defaultValue = kSpec.getDefaultValue()
-            iSpec.aliases = kSpec.getAliases().toMutableMap()
+            iSpec.description = kSpec.description.orNull
+            iSpec.defaultValue = kSpec.defaultValue.orNull
+            iSpec.aliases = kSpec.aliases.get().toMutableMap()
 
             when (kSpec) {
                 is StringSpec -> iSpec.type = InstallerParameterSpec.Type.STRING
                 is NumberSpec -> iSpec.type = InstallerParameterSpec.Type.FLOAT
-                is ListSpec -> iSpec.listSep = kSpec.getSeparator()
-                is OneOfSpec -> iSpec.choices = kSpec.getValues().toMutableList()
+                is ListSpec -> iSpec.listSep = kSpec.separator.get()
+                is OneOfSpec -> iSpec.choices = kSpec.values.get().toMutableList()
             }
 
             return iSpec
@@ -75,7 +77,7 @@ open class ZipKernelTask : Zip() {
     /**
      * The properties of the kernel being install. These will end up inside the generated kernel.json.
      */
-    private val _kernelInstallSpec = KernelInstallSpec(project)
+    private val _kernelInstallSpec = KernelInstallSpec(objects)
 
     /**
      * A specification of which installers to generate and include in the output zip.
@@ -85,7 +87,7 @@ open class ZipKernelTask : Zip() {
     /**
      * Parameters during installation that may be configured.
      */
-    private val _kernelParameters = KernelParameterSpecContainer(project)
+    private val _kernelParameters = KernelParameterSpecContainer(objects)
 
     init {
         this._installers.with("python")
@@ -101,8 +103,12 @@ open class ZipKernelTask : Zip() {
             return@from generatedFileTree(KERNEL_JSON_PATH, Action { out ->
                 val spec = with(kernelInstallSpec) {
                     KernelJson(
-                            "$UNSET_PATH_TOKEN/${getKernelExecutable().asFile.name}",
-                            getKernelDisplayName(), getKernelLanguage(), getKernelInterruptMode(), getKernelEnv())
+                            "$UNSET_PATH_TOKEN/${kernelExecutable.get().asFile.name}",
+                            kernelDisplayName.get(),
+                            kernelLanguage.get(),
+                            kernelInterruptMode.get(),
+                            kernelEnv.get()
+                    )
                 }
 
                 out.write(spec.toString().toUtf8Bytes())
@@ -114,16 +120,16 @@ open class ZipKernelTask : Zip() {
                 details.exclude()
         }
 
-        mainSpec.from({ kernelInstallSpec.getKernelResources() })
-        mainSpec.from({ kernelInstallSpec.getKernelExecutable() })
+        mainSpec.from(kernelInstallSpec.kernelResources)
+        mainSpec.from(kernelInstallSpec.kernelExecutable)
 
-        mainSpec.into { kernelInstallSpec.getKernelName() }
+        mainSpec.into(kernelInstallSpec.kernelName)
 
         val installerScriptsSpec = rootSpec.addChild().into("")
         installerScriptsSpec.from({
             if (InstallerMethod.PYTHON_SCRIPT in installers) {
                 val generator = PythonScriptGenerator()
-                kernelParameters.getParams().forEach { generator.addParameter(compileParam(it)) }
+                kernelParameters.params.get().forEach { generator.addParameter(compileParam(it)) }
                 return@from generatedFileTree("install.py", loadTemplate("install-scripts/python/install.template.py", generator))
             }
 
@@ -138,11 +144,11 @@ open class ZipKernelTask : Zip() {
 
     private fun loadTemplate(path: String, generator: SimpleScriptGenerator): Action<OutputStream> {
         return Action { out: OutputStream ->
-            val resource = ZipKernelTask::class.java.getClassLoader().getResourceAsStream(path)
+            val resource = ZipKernelTask::class.java.classLoader.getResourceAsStream(path)
                     ?: throw IllegalArgumentException("Template path not found in class resources: $path")
             val source = resource.bufferedReader().readText()
 
-            val name = kernelInstallSpec.getKernelName()
+            val name = kernelInstallSpec.kernelName.get()
             generator["KERNEL_NAME"] = name
             generator["KERNEL_DIRECTORY"] = name
 

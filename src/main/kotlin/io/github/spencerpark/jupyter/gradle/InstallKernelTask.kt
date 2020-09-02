@@ -29,8 +29,11 @@ import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
@@ -40,41 +43,33 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.util.ConfigureUtil
-import org.gradle.work.InputChanges
 import java.io.File
 import java.util.concurrent.Callable
+import javax.inject.Inject
 
-
+// TODO use ExecOperations injection to run commands
 @Suppress("UNCHECKED_CAST")
-open class InstallKernelTask : DefaultTask() {
-    private val _kernelInstallSpec = KernelInstallSpec(project)
-    private val _kernelParameters = KernelParameterSpecContainer(project)
-    private val _providedParameters = project.objects.mapProperty(String::class.java, List::class.java).convention(mapOf()) as MapProperty<String, List<String>>
-    private val _pythonExecutable = project.objects.property(String::class.java)
-    private val _kernelInstallPath = run { project.objects.directoryProperty().convention(project.provider(this.commandLineSpecifiedPath(this.defaultInstallPath))) }
+open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : DefaultTask(), WithGradleDslExtensions {
+    @Nested val kernelInstallSpec = KernelInstallSpec(objects)
+    @Nested val kernelParameters = KernelParameterSpecContainer(objects)
+    @Input val providedParameters: MapProperty<String, List<String>> = objects.mapProperty(String::class.java, List::class.java).convention(mutableMapOf()) as MapProperty<String, List<String>>
+    @Optional val pythonExecutable: Property<String> = objects.property(String::class.java)
+    @Input @Optional val kernelInstallPath: DirectoryProperty = objects.directoryProperty().convention(project.provider {
+        this.commandLineSpecifiedPath(this.defaultInstallPath).call()
+    })
 
-    @Nested
-    fun getKernelInstallSpec(): KernelInstallSpec = this._kernelInstallSpec
-    fun kernelInstallSpec(configure: Action<in KernelInstallSpec>) = configure.execute(this._kernelInstallSpec)
+    fun kernelInstallSpec(configure: Action<in KernelInstallSpec>) = configure.execute(this.kernelInstallSpec)
     fun kernelInstallSpec(@DelegatesTo(value = KernelInstallSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
-        ConfigureUtil.configure(configureClosure, this.getKernelInstallSpec())
+        ConfigureUtil.configure(configureClosure, this.kernelInstallSpec)
     }
 
-
-    @Nested
-    fun getKernelParameters(): KernelParameterSpecContainer = this._kernelParameters
-    fun kernelParameters(configure: Action<in KernelParameterSpecContainer>) = configure.execute(this.getKernelParameters())
+    fun kernelParameters(configure: Action<in KernelParameterSpecContainer>) = configure.execute(this.kernelParameters)
     fun kernelParameters(@DelegatesTo(value = KernelParameterSpecContainer::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
-        ConfigureUtil.configure(configureClosure, this.getKernelParameters())
+        ConfigureUtil.configure(configureClosure, this.kernelParameters)
     }
 
-
-    @Input
-    fun getProvidedParameters(): Map<String, List<String>> = this._providedParameters.get()
-    fun setProvidedParameters(providedParameters: Map<String, List<String>>) = this._providedParameters.set(providedParameters)
-    fun setProvidedParameters(providedParametersProvider: Provider<Map<String, List<String>>>) = this._providedParameters.set(providedParametersProvider)
     fun providedParameters(providedParameters: Map<String, Any>) {
-        val oldParams = this.getProvidedParameters()
+        val oldParams = this.providedParameters.get()
         val newParams = mutableMapOf<String, MutableList<String>>()
         oldParams.forEach { (p, vs) -> newParams[p] = vs.toMutableList() }
 
@@ -91,12 +86,12 @@ open class InstallKernelTask : DefaultTask() {
             }
         }
 
-        this._providedParameters.set(newParams)
+        this.providedParameters.set(newParams)
     }
 
     @Option(option = "param", description = "Add a provided parameter with the form \"NAME:VALUE\"")
     fun addProvidedParams(serializedParams: List<String>) {
-        val oldParams = this.getProvidedParameters()
+        val oldParams = this.providedParameters.get()
         val newParams = mutableMapOf<String, MutableList<String>>()
         oldParams.forEach { (p, vs) -> newParams[p] = vs.toMutableList() }
 
@@ -113,28 +108,22 @@ open class InstallKernelTask : DefaultTask() {
             newParams[name] = vs
         }
 
-        this._providedParameters.set(newParams)
+        this.providedParameters.set(newParams)
     }
 
 
     @Optional
     @Input
     fun getPythonExecutable(): String? = project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) as String?
-            ?: this._pythonExecutable.orNull
+            ?: this.pythonExecutable.orNull
 
     @Option(option = "python", description = "Set the python executable to use for resolving the `sys.prefix`.")
-    fun setPythonExecutable(pythonExecutable: String) = this._pythonExecutable.set(pythonExecutable)
-    fun setPythonExecutable(pythonExecutable: Provider<String>) = this._pythonExecutable.set(pythonExecutable)
+    fun setPythonExecutable(pythonExecutable: String) = this.pythonExecutable.set(pythonExecutable)
 
-
-    @Input
-    fun getKernelInstallPath(): Directory = this._kernelInstallPath.get()
 
     @Option(option = "path", description = "Set the path to install the kernel to. The install directory is \$path/\$kernelName.")
-    fun setKernelInstallPath(kernelInstallPath: String) = this._kernelInstallPath.set(project.layout.projectDirectory.dir(kernelInstallPath))
-    fun setKernelInstallPath(kernelInstallPath: Directory) = this._kernelInstallPath.set(kernelInstallPath)
-    fun setKernelInstallPath(kernelInstallPath: Provider<Directory>) = this._kernelInstallPath.set(kernelInstallPath)
-    fun setKernelInstallPath(kernelInstallPath: Callable<Directory>) = this._kernelInstallPath.set(project.provider(kernelInstallPath))
+    fun setKernelInstallPath(kernelInstallPath: String) = this.kernelInstallPath.set(project.layout.projectDirectory.dir(kernelInstallPath))
+    fun setKernelInstallPath(kernelInstallPath: Callable<Directory>) = this.kernelInstallPath.set(project.provider(kernelInstallPath))
 
     private fun runCommand(command: String): String {
         val process = Runtime.getRuntime().exec(command)
@@ -253,15 +242,15 @@ open class InstallKernelTask : DefaultTask() {
 
 
     @OutputDirectory
-    fun getKernelDirectory(): Directory = this.getKernelInstallPath().dir("kernels").dir(this.getKernelInstallSpec().getKernelName())
+    fun getKernelDirectory(): Directory = this.kernelInstallPath.get().dir("kernels").dir(this.kernelInstallSpec.kernelName.get())
 
 
     @Nested
     fun getKernelSpec(): KernelJson {
-        val env = this.getKernelInstallSpec().getKernelEnv().toMutableMap() // copy the default
-        val providedParams: Map<String, List<String>> = this.getProvidedParameters()
+        val env = this.kernelInstallSpec.kernelEnv.get().toMutableMap() // copy the default
+        val providedParams: Map<String, List<String>> = this.providedParameters.get()
 
-        this.getKernelParameters().getParams().forEach { param ->
+        this.kernelParameters.params.get().forEach { param ->
             var handledSomeParam = false
             fun handleParamValue(value: String) {
                 handledSomeParam = true
@@ -293,25 +282,26 @@ open class InstallKernelTask : DefaultTask() {
             // If none of the above attempts to find a property worked and the param has a default value,
             // just use the default.
             if (!handledSomeParam)
-                param.getDefaultValue()?.let(::handleParamValue)
+                param.defaultValue.orNull?.let(::handleParamValue)
         }
 
-        return with(this.getKernelInstallSpec()) {
-            KernelJson(getInstalledKernelJar(), getKernelDisplayName(), getKernelLanguage(), getKernelInterruptMode(), env)
+        return with(this.kernelInstallSpec) {
+            KernelJson(getInstalledKernelJar(), kernelDisplayName.get(), kernelLanguage.get(), kernelInterruptMode.get(), env)
         }
     }
 
 
-    private fun getInstalledKernelJar(): RegularFile = this.getKernelDirectory().file(this.getKernelInstallSpec().getKernelExecutable().asFile.name)
+    private fun getInstalledKernelJar(): RegularFile = this.getKernelDirectory().file(this.kernelInstallSpec.kernelExecutable.get().asFile.name)
 
     @TaskAction
     fun execute() {
         val kernelSpecFile = this.getKernelDirectory().file("kernel.json")
         kernelSpecFile.asFile.writeText(this.getKernelSpec().toString())
 
+        // TODO inject the copy service
         project.copy { spec ->
-            spec.from(this.getKernelInstallSpec().getKernelResources())
-            spec.from(this.getKernelInstallSpec().getKernelExecutable())
+            spec.from(this.kernelInstallSpec.kernelResources)
+            spec.from(this.kernelInstallSpec.kernelExecutable)
             spec.into(this.getKernelDirectory())
         }
     }
