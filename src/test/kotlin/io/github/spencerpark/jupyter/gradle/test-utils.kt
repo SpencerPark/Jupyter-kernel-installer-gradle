@@ -23,29 +23,35 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
-import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
+import java.io.File
 
-interface WithGradleDslExtensions {
-    infix fun <V> Property<V>.by(value: V?) {
-        this.set(value)
+fun <T> withTempFolder(prefix: String = "tmp", suffix: String? = null, directory: File? = null, block: (folder: File) -> T): T {
+    val folder = createTempDir(prefix, suffix, directory)
+
+    try {
+        return block(folder)
+    } finally {
+        folder.deleteRecursively()
     }
+}
 
-    infix fun <V> Property<V>.by(provider: Provider<out V>) {
-        this.set(provider)
+class GradleProjectLayout(
+        val projectRoot: File,
+        val buildFile: File
+)
+
+fun withGroovyGradleProjectLayout(block: GradleProjectLayout.() -> Unit) {
+    withTempFolder(prefix = "gradle-test", suffix = "groovy") { projectRoot ->
+        val buildFile = File(projectRoot, "build.gradle")
+        buildFile.createNewFile()
+        GradleProjectLayout(projectRoot, buildFile).block()
     }
+}
 
-    operator fun <K, V> MapProperty<K, V>.set(key: K, value: V) {
-        this.put(key, value)
-    }
-
-    operator fun <K, V> MapProperty<K, V>.set(key: K, provider: Provider<out V>) {
-        this.put(key, provider)
-    }
-
-    operator fun <V> ListProperty<V>.plusAssign(value: V) {
-        this.add(value)
+fun withKotlinGradleProjectLayout(block: GradleProjectLayout.() -> Unit) {
+    withTempFolder(prefix = "gradle-test", suffix = "kotlin") { projectRoot ->
+        val buildFile = File(projectRoot, "build.gradle.kts")
+        buildFile.createNewFile()
+        GradleProjectLayout(projectRoot, buildFile).block()
     }
 }

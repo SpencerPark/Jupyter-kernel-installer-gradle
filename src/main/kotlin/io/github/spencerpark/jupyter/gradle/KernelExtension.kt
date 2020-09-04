@@ -28,17 +28,18 @@ import groovy.lang.DelegatesTo
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.CopySpec
+import org.gradle.api.file.CopySourceSpec
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.internal.file.copy.CopySpecInternal
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Copy
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-open class KernelExtension @Inject constructor(project: Project, objects: ObjectFactory) : WithGradleDslExtensions {
+open class KernelExtension @Inject constructor(private val project: Project, objects: ObjectFactory) : WithGradleDslExtensions {
     val kernelName: Property<String> = objects.property(String::class.java).convention(project.name)
     val kernelDisplayName: Property<String> = objects.property(String::class.java).convention(kernelName)
     val kernelLanguage: Property<String> = objects.property(String::class.java).convention(kernelName)
@@ -47,20 +48,30 @@ open class KernelExtension @Inject constructor(project: Project, objects: Object
 
     val kernelEnv: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
 
-    val kernelExecutable: RegularFileProperty = objects.fileProperty()//.convention((project.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar).archiveFile)
+    val kernelExecutable: RegularFileProperty = objects.fileProperty()
 
     val kernelResources: ConfigurableFileCollection = project.files(project.fileTree("kernel"))
 
     val kernelParameters: KernelParameterSpecContainer = KernelParameterSpecContainer(objects)
 
+    fun kernelName(kernelName: String?) = this.kernelName.set(kernelName)
+    fun kernelDisplayName(kernelDisplayName: String?) = this.kernelDisplayName.set(kernelDisplayName)
+    fun kernelLanguage(kernelLanguage: String?) = this.kernelLanguage.set(kernelLanguage)
+
+    fun kernelInterruptMode(kernelInterruptMode: String?) = this.kernelInterruptMode.set(kernelInterruptMode)
+
     fun kernelEnv(kernelEnv: Map<String, String>) = this.kernelEnv.putAll(kernelEnv)
     fun kernelEnv(configure: Action<in MutableMap<String, String>>) = this.kernelEnv.set(this.kernelEnv.get().also(configure::execute))
 
-    fun setKernelResources(kernelResources: FileCollection) = this.kernelResources.setFrom(kernelResources)
-    fun kernelResources(configure: Action<in CopySpec>) = this.kernelResources.setFrom(Copy().also(configure::execute).source)
-    fun kernelResources(@DelegatesTo(value = CopySpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
-        this.kernelResources.setFrom(ConfigureUtil.configure(configureClosure, Copy()).source)
+    fun kernelExecutable(kernelExecutable: RegularFile) = this.kernelExecutable.set(kernelExecutable)
+    fun kernelExecutable(kernelExecutable: Any) = this.kernelExecutable.set(project.file(kernelExecutable))
+    fun setKernelExecutable(kernelExecutable: RegularFile) = this.kernelExecutable.set(kernelExecutable)
+
+    fun kernelResources(configure: Action<in CopySourceSpec>) = this.kernelResources.setFrom((project.copySpec(configure) as CopySpecInternal).buildRootResolver().allSource)
+    fun kernelResources(@DelegatesTo(value = CopySourceSpec::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {
+        this.kernelResources.setFrom((project.copySpec(configureClosure) as CopySpecInternal).buildRootResolver().allSource)
     }
+    fun setKernelResources(kernelResources: FileCollection) = this.kernelResources.setFrom(kernelResources)
 
     fun kernelParameters(configure: Action<in KernelParameterSpecContainer>) = configure.execute(this.kernelParameters)
     fun kernelParameters(@DelegatesTo(value = KernelParameterSpecContainer::class, strategy = Closure.DELEGATE_FIRST) configureClosure: Closure<*>) {

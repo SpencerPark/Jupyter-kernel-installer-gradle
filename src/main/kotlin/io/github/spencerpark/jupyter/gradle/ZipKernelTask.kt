@@ -30,7 +30,6 @@ import io.github.spencerpark.jupyter.gradle.installers.InstallerParameterSpec
 import io.github.spencerpark.jupyter.gradle.installers.InstallersSpec
 import io.github.spencerpark.jupyter.gradle.installers.PythonScriptGenerator
 import io.github.spencerpark.jupyter.gradle.installers.SimpleScriptGenerator
-import kotlinx.serialization.toUtf8Bytes
 import org.gradle.api.Action
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.collections.FileTreeAdapter
@@ -111,7 +110,7 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
                     )
                 }
 
-                out.write(spec.toString().toUtf8Bytes())
+                out.write(spec.toString().toByteArray(Charsets.UTF_8))
             })
         })
 

@@ -31,15 +31,17 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import java.io.File
+import javax.inject.Inject
 
 private val KEYWORDS = setOf("user", "sys-prefix", "prefix", "replace", "help")
 
-sealed class KernelParameterSpec(
+sealed class KernelParameterSpec @Inject constructor(
         objects: ObjectFactory,
         @Input val name: String,
         @Input val environmentVariable: String
-) {
+) : WithGradleDslExtensions {
     @Input @Optional val description: Property<String> = objects.property(String::class.java)
+
     @Input
     val aliases: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
     @Input @Optional val defaultValue: Property<String> = objects.property(String::class.java)
@@ -63,13 +65,13 @@ sealed class KernelParameterSpec(
 }
 
 
-class StringSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+open class StringSpec @Inject constructor(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     override fun addValueToEnv(value: String, env: MutableMap<String, String>) {
         env[super.environmentVariable] = value
     }
 }
 
-class NumberSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+open class NumberSpec @Inject constructor(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     override fun preProcessAndValidateValue(value: String): String {
         value.toDoubleOrNull() ?: throw GradleException("$name parameter expects a number value but was given '$value'")
         return super.preProcessAndValidateValue(value)
@@ -80,11 +82,14 @@ class NumberSpec(objects: ObjectFactory, name: String, environmentVariable: Stri
     }
 }
 
-class ListSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+open class ListSpec @Inject constructor(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     val PATH_SEPARATOR = "\u0000\u0001"
     val FILE_SEPARATOR = "\u0000\u0002"
 
     @Input val separator = objects.property(String::class.java).convention(" ")
+
+    fun separator(separator: String?) = this.separator.set(separator)
+    fun setSeparator(separator: String?) = this.separator.set(separator)
 
     fun usePathSeparator() = this.separator.set(PATH_SEPARATOR)
     fun useFileSeparator() = this.separator.set(FILE_SEPARATOR)
@@ -105,7 +110,7 @@ class ListSpec(objects: ObjectFactory, name: String, environmentVariable: String
     }
 }
 
-class OneOfSpec(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
+open class OneOfSpec @Inject constructor(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
     @Input val values: ListProperty<String> = objects.listProperty(String::class.java).convention(mutableListOf())
 
     fun values(values: List<String>) = this.values.addAll(values)

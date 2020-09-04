@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'io.github.spencerpark.jupyter-kernel-installer'
+}
+
+wrapper {
+    gradleVersion = '6.0'
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+jupyter {
+    kernelName 'groovy'
+    kernelDisplayName 'Groovy DSL Example'
+    kernelLanguage = 'groovy'
+    kernelInterruptMode = 'message'
+
+    kernelEnv = [:]
+    kernelEnv IN_JUPYTER_KERNEL: '1'
+    kernelEnv['KERNEL_VERSION'] = project.version
+
+    kernelResources {
+        from 'kernel' // This is the default
+
+        from(files('example-resource.txt', 'example-excluded-resource.txt')) {
+            exclude 'example-excluded-resource.txt'
+        }
+    }
+
+    kernelParameters {
+        string('startup-script', 'STARTUP_SCRIPT') {
+            description = 'A raw code snippet to execute when the kernel starts.'
+        }
+
+        number('timeout', 'TIMEOUT') {
+            aliases['NEVER'] = '-1'
+            aliases NEVER_EVER: '-2'
+            description '''
+                |A timeout in milliseconds for something that I guess takes
+                |a while.
+                |
+                |When less than 1, there is no timeout. If desired, use the
+                |constant `NEVER` (--timeout=NEVER) to specify that.
+            '''.stripMargin('|')
+        }
+
+        list('classpath', 'CLASSPATH') {
+            usePathSeparator()
+            description 'A file path separator delimited list of classpath entries.'
+        }
+
+        list('comp-opts', 'EXTRA_COMPILER_OPTS') {
+            separator = ' '
+            description 'A space delimited list of command line options that would be passed to the `javac` command when compiling a project.'
+        }
+
+        list('startup-scripts-path', 'STARTUP_SCRIPTS_PATH') {
+            separator = PATH_SEPARATOR
+            description 'A file path separator delimited list of scripts to run on startup.'
+        }
+
+        oneOf('engine', 'ENGINE') {
+            value 'ENGINE_1'
+            value 'ENGINE_2'
+            defaultValue = 'ENGINE_1'
+
+            description 'Specify the engine, only 2 options.'
+        }
+    }
+}
+
+installKernel {
+    kernelInstallPath = commandLineSpecifiedPath(userInstallPath)
+}
+
+zipKernel {
+    installers {
+        with 'python'
+    }
+    archiveBaseName = 'groovy-dsl-example-kernel-dist'
+}
