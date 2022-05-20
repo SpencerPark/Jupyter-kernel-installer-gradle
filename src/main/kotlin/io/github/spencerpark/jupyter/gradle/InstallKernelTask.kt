@@ -53,7 +53,7 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
     @Nested val kernelInstallSpec = KernelInstallSpec(objects)
     @Nested val kernelParameters = KernelParameterSpecContainer(objects)
     @Input val providedParameters: MapProperty<String, List<String>> = objects.mapProperty(String::class.java, List::class.java).convention(mutableMapOf()) as MapProperty<String, List<String>>
-    @Optional val pythonExecutable: Property<String> = objects.property(String::class.java)
+    val pythonExecutable: Property<String> = objects.property(String::class.java)
     @Input @Optional val kernelInstallPath: DirectoryProperty = objects.directoryProperty().convention(project.provider {
         this.commandLineSpecifiedPath(this.defaultInstallPath).call()
     })
@@ -112,7 +112,7 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
     }
 
 
-    @Optional
+	@Optional
     @Input
     fun getPythonExecutable(): String? = project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) as String?
             ?: this.pythonExecutable.orNull
