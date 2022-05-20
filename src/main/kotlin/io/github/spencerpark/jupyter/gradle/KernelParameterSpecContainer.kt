@@ -33,7 +33,7 @@ import org.gradle.api.tasks.Nested
 import org.gradle.util.ConfigureUtil
 
 class KernelParameterSpecContainer(private val objects: ObjectFactory) {
-    @Internal @Nested
+    @Internal
     val params: ListProperty<KernelParameterSpec> = objects.listProperty(KernelParameterSpec::class.java).convention(mutableListOf())
 
     private inline fun <reified T : KernelParameterSpec>spec(name: String, environmentVariable: String) = objects.newInstance(T::class.java, name, environmentVariable)
