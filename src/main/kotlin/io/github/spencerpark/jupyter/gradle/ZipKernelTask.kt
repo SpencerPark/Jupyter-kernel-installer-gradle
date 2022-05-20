@@ -38,6 +38,8 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.util.PatternSet
+import org.gradle.internal.nativeintegration.services.FileSystems
 import org.gradle.util.ConfigureUtil
 import java.io.OutputStream
 import javax.inject.Inject
@@ -89,6 +91,7 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
     private val _kernelParameters = KernelParameterSpecContainer(objects)
 
     init {
+		System.err.println("LOL INIT")
         this._installers.with("python")
 
         // Thanks org/gradle/jvm/tasks/Jar.java for all your help :)
@@ -137,9 +140,27 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
     }
 
     private fun generatedFileTree(fileName: String, generator: Action<OutputStream>): FileTree {
-        val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, generator)
-        return FileTreeAdapter(tree)
-    }
+//        val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, generator)
+//		val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, PatternSet(), generator)
+		// FileSystems.getDefault()
+		//-    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, Action<OutputStream> contentWriter) {
+		//-        this(tmpDirSource, fileName, new PatternSet(), contentWriter);
+		//-    }
+		//-
+		//-    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, PatternSet patternSet, Action<OutputStream> contentWriter) {
+		//-        super(patternSet);
+		//+    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, Action<File> fileGenerationListener, Action<OutputStream> contentWriter, FileSystem fileSystem)
+		val tree = GeneratedSingletonFileTree(
+			super.getTemporaryDirFactory(),
+			fileName,
+			Action {  },
+			generator,
+			FileSystems.getDefault()
+		)
+		// TODO Is this the correct PatternSet factory?
+		// TODO Default PatternSet() is used in constructor for GeneratedSingletonFileTree for gradle version 6
+        return FileTreeAdapter(tree) { PatternSet() }
+	}
 
     private fun loadTemplate(path: String, generator: SimpleScriptGenerator): Action<OutputStream> {
         return Action { out: OutputStream ->

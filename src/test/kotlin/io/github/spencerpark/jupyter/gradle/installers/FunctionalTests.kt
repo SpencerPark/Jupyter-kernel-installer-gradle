@@ -23,6 +23,7 @@
  */
 package io.github.spencerpark.jupyter.gradle.installers
 
+import io.github.spencerpark.jupyter.gradle.GradleProjectLayout
 import io.github.spencerpark.jupyter.gradle.withGroovyGradleProjectLayout
 import io.github.spencerpark.jupyter.gradle.withKotlinGradleProjectLayout
 import io.kotest.core.spec.style.StringSpec
@@ -99,3 +100,32 @@ class FunctionalTests : StringSpec({
         }
     }
 })
+
+fun main(args: Array<String>) {
+	withGroovyGradleProjectLayout {
+		buildFile.appendText(
+			"""
+                plugins {
+                    id 'java'
+                    id 'io.github.spencerpark.jupyter-kernel-installer'
+                }
+                
+                zipKernel {
+                    installers {
+                        with 'python'
+                    }
+                }
+            """.trimIndent()
+		)
+
+		// TODO build this runner into the test block to run against multiple gradle versions to test compatibility
+		val result = GradleRunner.create()
+			.withProjectDir(projectRoot)
+			.withPluginClasspath()
+			.withArguments("zipKernel")
+			.build()
+
+		result.task(":zipKernel")
+	}
+
+}
