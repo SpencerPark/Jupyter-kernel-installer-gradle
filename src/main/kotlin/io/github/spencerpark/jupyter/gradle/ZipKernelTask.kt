@@ -91,7 +91,6 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
     private val _kernelParameters = KernelParameterSpecContainer(objects)
 
     init {
-		System.err.println("LOL INIT")
         this._installers.with("python")
 
         // Thanks org/gradle/jvm/tasks/Jar.java for all your help :)

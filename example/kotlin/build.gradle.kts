@@ -4,11 +4,11 @@ import io.github.spencerpark.jupyter.gradle.ZipKernelTask
 
 plugins {
     id("java")
-    id("io.github.spencerpark.jupyter-kernel-installer")
+    id("io.github.spencerpark.jupyter-kernel-installer") version ("9001")
 }
 
 tasks.named<Wrapper>("wrapper") {
-    gradleVersion = "6.0"
+    gradleVersion = "7.4.2"
     distributionType = Wrapper.DistributionType.ALL
 }
 

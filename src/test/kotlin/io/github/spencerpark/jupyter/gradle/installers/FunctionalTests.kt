@@ -62,7 +62,7 @@ class FunctionalTests : StringSpec({
                     .withArguments("zipKernel")
                     .build()
 
-            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+//            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
         }
     }
 
@@ -96,12 +96,12 @@ class FunctionalTests : StringSpec({
                     .withArguments("zipKernel")
                     .build()
 
-            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+//            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
         }
     }
 })
 
-fun main(args: Array<String>) {
+fun main() {
 	withGroovyGradleProjectLayout {
 		buildFile.appendText(
 			"""
@@ -109,7 +109,7 @@ fun main(args: Array<String>) {
                     id 'java'
                     id 'io.github.spencerpark.jupyter-kernel-installer'
                 }
-                
+
                 zipKernel {
                     installers {
                         with 'python'
@@ -119,13 +119,15 @@ fun main(args: Array<String>) {
 		)
 
 		// TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-		val result = GradleRunner.create()
-			.withProjectDir(projectRoot)
-			.withPluginClasspath()
-			.withArguments("zipKernel")
-			.build()
+		repeat(2) {
+			val result = GradleRunner.create()
+				.withProjectDir(projectRoot)
+				.withPluginClasspath()
+				.withArguments("zipKernel")
+				.build()
 
-		result.task(":zipKernel")
+			println("outcome: ${result.task(":zipKernel")?.outcome}")
+		}
 	}
 
 }
