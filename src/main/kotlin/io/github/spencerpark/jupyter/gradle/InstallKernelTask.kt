@@ -54,8 +54,8 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
     @Nested val kernelParameters = KernelParameterSpecContainer(objects)
     @Input val providedParameters: MapProperty<String, List<String>> = objects.mapProperty(String::class.java, List::class.java).convention(mutableMapOf()) as MapProperty<String, List<String>>
     val pythonExecutable: Property<String> = objects.property(String::class.java)
-    @Input @Optional val kernelInstallPath: DirectoryProperty = objects.directoryProperty().convention(project.provider {
-        this.commandLineSpecifiedPath(this.defaultInstallPath).call()
+    @Input @Optional val kernelInstallPath: Property<String> = objects.property(String::class.java).convention(project.provider {
+        this.commandLineSpecifiedPath(this.defaultInstallPath).call().asFile.absolutePath
     })
 
     fun kernelInstallSpec(configure: Action<in KernelInstallSpec>) = configure.execute(this.kernelInstallSpec)
@@ -122,8 +122,8 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
 
 
     @Option(option = "path", description = "Set the path to install the kernel to. The install directory is \$path/\$kernelName.")
-    fun setKernelInstallPath(kernelInstallPath: String) = this.kernelInstallPath.set(project.layout.projectDirectory.dir(kernelInstallPath))
-    fun setKernelInstallPath(kernelInstallPath: Callable<Directory>) = this.kernelInstallPath.set(project.provider(kernelInstallPath))
+    fun setKernelInstallPath(kernelInstallPath: String) = this.kernelInstallPath.set(project.layout.projectDirectory.dir(kernelInstallPath).asFile.absolutePath)
+    fun setKernelInstallPath(kernelInstallPath: Callable<Directory>) = this.kernelInstallPath.set(project.provider(kernelInstallPath).map { it.asFile.absolutePath })
 
     private fun runCommand(command: String): String {
         val process = Runtime.getRuntime().exec(command)
@@ -242,7 +242,7 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
 
 
     @OutputDirectory
-    fun getKernelDirectory(): Directory = this.kernelInstallPath.get().dir("kernels").dir(this.kernelInstallSpec.kernelName.get())
+    fun getKernelDirectory(): Directory = project.layout.projectDirectory.dir(this.kernelInstallPath.get()).dir("kernels").dir(this.kernelInstallSpec.kernelName.get())
 
 
     @Nested
