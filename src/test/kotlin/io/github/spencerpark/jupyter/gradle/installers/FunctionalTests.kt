@@ -24,6 +24,7 @@
 package io.github.spencerpark.jupyter.gradle.installers
 
 import io.github.spencerpark.jupyter.gradle.GradleProjectLayout
+import io.github.spencerpark.jupyter.gradle.assertTaskOutcome
 import io.github.spencerpark.jupyter.gradle.withGroovyGradleProjectLayout
 import io.github.spencerpark.jupyter.gradle.withKotlinGradleProjectLayout
 import io.kotest.core.spec.style.StringSpec
@@ -48,21 +49,8 @@ class FunctionalTests : StringSpec({
             """.trimIndent())
 
             // TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-            var result = GradleRunner.create()
-                    .withProjectDir(projectRoot)
-                    .withPluginClasspath()
-                    .withArguments("zipKernel")
-                    .build()
-
-            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.SUCCESS
-
-            result = GradleRunner.create()
-                    .withProjectDir(projectRoot)
-                    .withPluginClasspath()
-                    .withArguments("zipKernel")
-                    .build()
-
-//            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+			assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
+			assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
         }
     }
 
@@ -82,21 +70,8 @@ class FunctionalTests : StringSpec({
             """.trimIndent())
 
             // TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-            var result = GradleRunner.create()
-                    .withProjectDir(projectRoot)
-                    .withPluginClasspath()
-                    .withArguments("zipKernel")
-                    .build()
-
-            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.SUCCESS
-
-            result = GradleRunner.create()
-                    .withProjectDir(projectRoot)
-                    .withPluginClasspath()
-                    .withArguments("zipKernel")
-                    .build()
-
-//            result.task(":zipKernel")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+			assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
+			assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
         }
     }
 })
