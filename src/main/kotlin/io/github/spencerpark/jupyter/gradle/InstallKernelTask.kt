@@ -112,7 +112,7 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
     }
 
 
-	@Optional
+    @Optional
     @Input
     fun getPythonExecutable(): String? = project.findProperty(PropertyNames.INSTALL_KERNEL_PYTHON) as String?
             ?: this.pythonExecutable.orNull
