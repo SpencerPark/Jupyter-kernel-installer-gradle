@@ -12,7 +12,7 @@ plugins {
 }
 
 group = 'io.github.spencerpark'
-version = '9003'
+version = '9004'
 
 wrapper {
     gradleVersion = '7.4.2'

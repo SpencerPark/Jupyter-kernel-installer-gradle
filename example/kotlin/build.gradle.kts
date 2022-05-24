@@ -70,7 +70,7 @@ jupyter {
 }
 
 tasks.named<InstallKernelTask>("installKernel") {
-    kernelInstallPath by provider(commandLineSpecifiedPathString(userInstallPath))
+    kernelInstallPath by provider(commandLineSpecifiedPath(userInstallPath))
 }
 
 tasks.named<ZipKernelTask>("zipKernel") {

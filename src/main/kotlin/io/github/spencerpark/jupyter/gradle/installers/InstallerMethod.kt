@@ -31,7 +31,7 @@ enum class InstallerMethod(vararg val groups: String) {
 
     companion object {
         private val BY_NAME = values()
-                .map { it.name.toLowerCase(Locale.ENGLISH).replace("_", "") to it }
+                .map { it.name.lowercase(Locale.ENGLISH).replace("_", "") to it }
                 .toMap()
         private val GROUPS_BY_NAME: Map<String, Set<InstallerMethod>> = values()
                 .flatMap { m -> m.groups.map { it to m } }
