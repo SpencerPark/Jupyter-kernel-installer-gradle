@@ -240,6 +240,10 @@ open class InstallKernelTask @Inject constructor(objects: ObjectFactory) : Defau
         }
     }
 
+	fun commandLineSpecifiedPathString(fallback: Callable<Directory> = this.defaultInstallPath) = Callable {
+		commandLineSpecifiedPath(fallback).call().asFile.absolutePath
+	}
+
 
     @OutputDirectory
     fun getKernelDirectory(): Directory = project.layout.projectDirectory.dir(this.kernelInstallPath.get()).dir("kernels").dir(this.kernelInstallSpec.kernelName.get())

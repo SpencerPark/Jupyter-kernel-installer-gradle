@@ -4,7 +4,7 @@ import io.github.spencerpark.jupyter.gradle.ZipKernelTask
 
 plugins {
     id("java")
-    id("io.github.spencerpark.jupyter-kernel-installer") version ("9001")
+    id("io.github.spencerpark.jupyter-kernel-installer")
 }
 
 tasks.named<Wrapper>("wrapper") {
@@ -70,7 +70,7 @@ jupyter {
 }
 
 tasks.named<InstallKernelTask>("installKernel") {
-    kernelInstallPath by provider(commandLineSpecifiedPath(userInstallPath))
+    kernelInstallPath by provider(commandLineSpecifiedPathString(userInstallPath))
 }
 
 tasks.named<ZipKernelTask>("zipKernel") {
