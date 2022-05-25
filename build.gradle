@@ -8,24 +8,24 @@ plugins {
     id 'java-gradle-plugin'
     id 'com.gradle.plugin-publish' version '0.10.1'
     id 'maven-publish'
-//    id 'com.github.hierynomus.license' version '0.15.0'
+    id 'com.github.hierynomus.license' version '0.16.1'
 }
 
 group = 'io.github.spencerpark'
-version = '9004'
+version = '3.0.0-SNAPSHOT'
 
 wrapper {
     gradleVersion = '7.4.2'
     distributionType = Wrapper.DistributionType.ALL
 }
 
-//license {
-//    include '**/*.groovy'
-//    include '**/*.kt'
-//    header = rootProject.file('LICENSE')
-//    strictCheck true
-//}
-//tasks.build { dependsOn('licenseFormat') }
+license {
+    include '**/*.groovy'
+    include '**/*.kt'
+    header = rootProject.file('LICENSE')
+    strictCheck true
+}
+tasks.build { dependsOn('licenseFormat') }
 
 repositories {
     mavenLocal()
@@ -75,7 +75,3 @@ pluginBundle {
         }
     }
 }
-
-//project.plugins.each {
-//	println "${it}: ${it.getClass().location}"
-//}
