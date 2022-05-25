@@ -23,6 +23,10 @@
  */
 package io.github.spencerpark.jupyter.gradle
 
+import io.kotest.matchers.shouldBe
+import org.gradle.testkit.runner.BuildResult
+import org.gradle.testkit.runner.GradleRunner
+import org.gradle.testkit.runner.TaskOutcome
 import java.io.File
 
 fun <T> withTempFolder(prefix: String = "tmp", suffix: String? = null, directory: File? = null, block: (folder: File) -> T): T {
@@ -54,4 +58,15 @@ fun withKotlinGradleProjectLayout(block: GradleProjectLayout.() -> Unit) {
         buildFile.createNewFile()
         GradleProjectLayout(projectRoot, buildFile).block()
     }
+}
+
+fun GradleProjectLayout.runTask(task: String): BuildResult = GradleRunner.create()
+    .withProjectDir(projectRoot)
+    .withPluginClasspath()
+    .withArguments(task)
+    .build()
+
+fun GradleProjectLayout.assertTaskOutcome(task: String, outcome: TaskOutcome) {
+    val result = runTask(task)
+    result.task(":$task")?.outcome shouldBe outcome
 }

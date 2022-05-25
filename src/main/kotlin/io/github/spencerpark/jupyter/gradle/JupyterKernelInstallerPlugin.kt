@@ -27,6 +27,7 @@ import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.util.GradleVersion
@@ -53,27 +54,17 @@ class JupyterKernelInstallerPlugin : Plugin<Project> {
             installSpec.setKernelResources(kernelExtension.kernelResources)
         }
 
-        project.tasks.create("installKernel", InstallKernelTask::class.java) { task: InstallKernelTask ->
-            task.description = "Locally install the kernel."
-            task.group = "jupyter"
+        project.tasks.create(
+            "installKernel",
+            InstallKernelTask::class.java,
+            InstallKernelTaskAction(kernelExtension, configureInstallProps)
+        )
 
-            // Note that this sets the values to **providers**. Essentially the providers act as
-            // references to a value so that they are shared between tasks and configurations.
-            task.kernelInstallSpec(configureInstallProps)
-            task.doFirst { task.kernelInstallSpec.validate() }
-
-            task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
-        }
-
-        project.tasks.create("zipKernel", ZipKernelTask::class.java) { task: ZipKernelTask ->
-            task.description = "Create a zip with the kernel files."
-            task.group = "jupyter"
-
-            task.kernelInstallSpec(configureInstallProps)
-            task.doFirst { task.kernelInstallSpec.validate() }
-
-            task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
-        }
+        project.tasks.create(
+            "zipKernel",
+            ZipKernelTask::class.java,
+            ZipKernelTaskAction(kernelExtension, configureInstallProps)
+        )
 
         // If the java plugin was already applied, hook up the executable as the default executable for
         // the extension.
@@ -91,6 +82,47 @@ private class ApplyJavaConvention(val project: Project, val kernelExtension: Ker
         project.tasks.withType(ZipKernelTask::class.java).configureEach {
             it.dependsOn(JavaPlugin.JAR_TASK_NAME)
         }
+    }
+
+}
+
+private class Validate(val kernelInstallSpec: KernelInstallSpec): Action<Task> {
+    override fun execute(task: Task) {
+        kernelInstallSpec.validate()
+    }
+
+}
+
+private class InstallKernelTaskAction(
+    private val kernelExtension: KernelExtension,
+    private val configureInstallProps: Action<KernelInstallSpec>
+) : Action<InstallKernelTask> {
+    override fun execute(task: InstallKernelTask) {
+        task.description = "Locally install the kernel."
+        task.group = "jupyter"
+
+        // Note that this sets the values to **providers**. Essentially the providers act as
+        // references to a value so that they are shared between tasks and configurations.
+        task.kernelInstallSpec(configureInstallProps)
+        task.doFirst(Validate(task.kernelInstallSpec))
+
+        task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
+    }
+
+}
+
+private class ZipKernelTaskAction(
+    private val kernelExtension: KernelExtension,
+    private val configureInstallProps: Action<KernelInstallSpec>
+): Action<ZipKernelTask> {
+    override fun execute(task: ZipKernelTask) {
+        task.description = "Create a zip with the kernel files."
+        task.group = "jupyter"
+
+        task.kernelInstallSpec(configureInstallProps)
+        task.doFirst(Validate(task.kernelInstallSpec))
+
+        task.kernelParameters.params.convention(kernelExtension.kernelParameters.params)
     }
 
 }

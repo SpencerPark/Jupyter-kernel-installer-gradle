@@ -38,6 +38,8 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.util.PatternSet
+import org.gradle.internal.nativeintegration.services.FileSystems
 import org.gradle.util.ConfigureUtil
 import java.io.OutputStream
 import javax.inject.Inject
@@ -137,8 +139,16 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
     }
 
     private fun generatedFileTree(fileName: String, generator: Action<OutputStream>): FileTree {
-        val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, generator)
-        return FileTreeAdapter(tree)
+        val tree = GeneratedSingletonFileTree(
+            super.getTemporaryDirFactory(),
+            fileName,
+            {  },
+            generator,
+            FileSystems.getDefault()
+        )
+        // TODO Is this the correct PatternSet factory?
+        // TODO Default PatternSet() is used in constructor for GeneratedSingletonFileTree for gradle version 6
+        return FileTreeAdapter(tree) { PatternSet() }
     }
 
     private fun loadTemplate(path: String, generator: SimpleScriptGenerator): Action<OutputStream> {

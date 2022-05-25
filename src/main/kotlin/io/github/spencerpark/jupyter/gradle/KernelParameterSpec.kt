@@ -29,6 +29,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import java.io.File
 import javax.inject.Inject
@@ -83,8 +84,8 @@ open class NumberSpec @Inject constructor(objects: ObjectFactory, name: String, 
 }
 
 open class ListSpec @Inject constructor(objects: ObjectFactory, name: String, environmentVariable: String) : KernelParameterSpec(objects, name, environmentVariable) {
-    val PATH_SEPARATOR = "\u0000\u0001"
-    val FILE_SEPARATOR = "\u0000\u0002"
+    @Internal val PATH_SEPARATOR = "\u0000\u0001"
+    @Internal val FILE_SEPARATOR = "\u0000\u0002"
 
     @Input val separator = objects.property(String::class.java).convention(" ")
 

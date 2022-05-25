@@ -28,12 +28,11 @@ import groovy.lang.DelegatesTo
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.util.ConfigureUtil
 
 class KernelParameterSpecContainer(private val objects: ObjectFactory) {
-    @Internal @Nested
+    @Nested
     val params: ListProperty<KernelParameterSpec> = objects.listProperty(KernelParameterSpec::class.java).convention(mutableListOf())
 
     private inline fun <reified T : KernelParameterSpec>spec(name: String, environmentVariable: String) = objects.newInstance(T::class.java, name, environmentVariable)
