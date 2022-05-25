@@ -61,12 +61,12 @@ fun withKotlinGradleProjectLayout(block: GradleProjectLayout.() -> Unit) {
 }
 
 fun GradleProjectLayout.runTask(task: String): BuildResult = GradleRunner.create()
-	.withProjectDir(projectRoot)
-	.withPluginClasspath()
-	.withArguments(task)
-	.build()
+    .withProjectDir(projectRoot)
+    .withPluginClasspath()
+    .withArguments(task)
+    .build()
 
 fun GradleProjectLayout.assertTaskOutcome(task: String, outcome: TaskOutcome) {
-	val result = runTask(task)
-	result.task(":$task")?.outcome shouldBe outcome
+    val result = runTask(task)
+    result.task(":$task")?.outcome shouldBe outcome
 }

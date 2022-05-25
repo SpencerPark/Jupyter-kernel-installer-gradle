@@ -23,13 +23,10 @@
  */
 package io.github.spencerpark.jupyter.gradle.installers
 
-import io.github.spencerpark.jupyter.gradle.GradleProjectLayout
 import io.github.spencerpark.jupyter.gradle.assertTaskOutcome
 import io.github.spencerpark.jupyter.gradle.withGroovyGradleProjectLayout
 import io.github.spencerpark.jupyter.gradle.withKotlinGradleProjectLayout
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 
 class FunctionalTests : StringSpec({
@@ -49,8 +46,8 @@ class FunctionalTests : StringSpec({
             """.trimIndent())
 
             // TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-			assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
-			assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
+            assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
+            assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
         }
     }
 
@@ -70,39 +67,8 @@ class FunctionalTests : StringSpec({
             """.trimIndent())
 
             // TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-			assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
-			assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
+            assertTaskOutcome("zipKernel", TaskOutcome.SUCCESS)
+            assertTaskOutcome("zipKernel", TaskOutcome.UP_TO_DATE)
         }
     }
 })
-
-fun main() {
-	withGroovyGradleProjectLayout {
-		buildFile.appendText(
-			"""
-                plugins {
-                    id 'java'
-                    id 'io.github.spencerpark.jupyter-kernel-installer'
-                }
-
-                zipKernel {
-                    installers {
-                        with 'python'
-                    }
-                }
-            """.trimIndent()
-		)
-
-		// TODO build this runner into the test block to run against multiple gradle versions to test compatibility
-		repeat(2) {
-			val result = GradleRunner.create()
-				.withProjectDir(projectRoot)
-				.withPluginClasspath()
-				.withArguments("zipKernel")
-				.build()
-
-			println("outcome: ${result.task(":zipKernel")?.outcome}")
-		}
-	}
-
-}

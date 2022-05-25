@@ -139,27 +139,17 @@ open class ZipKernelTask @Inject constructor(objects: ObjectFactory) : Zip(), Wi
     }
 
     private fun generatedFileTree(fileName: String, generator: Action<OutputStream>): FileTree {
-//        val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, generator)
-//		val tree = GeneratedSingletonFileTree(super.getTemporaryDirFactory(), fileName, PatternSet(), generator)
-		// FileSystems.getDefault()
-		//-    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, Action<OutputStream> contentWriter) {
-		//-        this(tmpDirSource, fileName, new PatternSet(), contentWriter);
-		//-    }
-		//-
-		//-    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, PatternSet patternSet, Action<OutputStream> contentWriter) {
-		//-        super(patternSet);
-		//+    public GeneratedSingletonFileTree(Factory<File> tmpDirSource, String fileName, Action<File> fileGenerationListener, Action<OutputStream> contentWriter, FileSystem fileSystem)
-		val tree = GeneratedSingletonFileTree(
-			super.getTemporaryDirFactory(),
-			fileName,
-			Action {  },
-			generator,
-			FileSystems.getDefault()
-		)
-		// TODO Is this the correct PatternSet factory?
-		// TODO Default PatternSet() is used in constructor for GeneratedSingletonFileTree for gradle version 6
+        val tree = GeneratedSingletonFileTree(
+            super.getTemporaryDirFactory(),
+            fileName,
+            {  },
+            generator,
+            FileSystems.getDefault()
+        )
+        // TODO Is this the correct PatternSet factory?
+        // TODO Default PatternSet() is used in constructor for GeneratedSingletonFileTree for gradle version 6
         return FileTreeAdapter(tree) { PatternSet() }
-	}
+    }
 
     private fun loadTemplate(path: String, generator: SimpleScriptGenerator): Action<OutputStream> {
         return Action { out: OutputStream ->
