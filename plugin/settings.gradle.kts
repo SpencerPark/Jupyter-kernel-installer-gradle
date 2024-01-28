@@ -1,0 +1,1 @@
+rootProject.name = "jupyter-kernel-installer"

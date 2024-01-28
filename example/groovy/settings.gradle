@@ -1,3 +1,5 @@
-rootProject.name = 'groovy-dsl-example'
+pluginManagement {
+    includeBuild '../../plugin'
+}
 
-includeBuild '../../'
+rootProject.name = 'groovy-dsl-example'

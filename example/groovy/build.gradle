@@ -3,11 +3,6 @@ plugins {
     id 'io.github.spencerpark.jupyter-kernel-installer'
 }
 
-wrapper {
-    gradleVersion = '6.0'
-    distributionType = Wrapper.DistributionType.ALL
-}
-
 jupyter {
     kernelName 'groovy'
     kernelDisplayName 'Groovy DSL Example'
@@ -23,6 +18,7 @@ jupyter {
 
         from(files('example-resource.txt', 'example-excluded-resource.txt')) {
             exclude 'example-excluded-resource.txt'
+            into 'extras'
         }
     }
 
@@ -68,8 +64,13 @@ jupyter {
     }
 }
 
+generateKernelJson {
+    kernelInstallSpec.kernelDisplayName = "${kernelInstallSpec.kernelDisplayName.get()} Renamed Slightly"
+}
+
 installKernel {
-    kernelInstallPath = commandLineSpecifiedPath(userInstallPath)
+    kernelInstallPath = commandLineSpecifiedPathOr(
+            project.layout.buildDirectory.dir("jupyter/mock-install"))
 }
 
 zipKernel {
