@@ -12,32 +12,13 @@ That project has an example kernel implementation (including usage with this plu
 
 ### Using the plugin
 
-**Requires Gradle `>=5.0`**
+Version 3 of the plugin built for gradle 8. See examples for kotlin and groovy gradle buildscripts in [/example/kotlin](/example/kotlin) and [/example/groovy](/example/groovy).
 
 Add the following block to the project's `build.gradle`
 
-##### The old way
-
-```gradle
-buildscript {
-  repositories {
-    maven {
-      url "https://plugins.gradle.org/m2/"
-    }
-  }
-  dependencies {
-    classpath "gradle.plugin.io.github.spencerpark:jupyter-kernel-installer:2.1.0"
-  }
-}
-
-apply plugin: "io.github.spencerpark.jupyter-kernel-installer"
-```
-
-##### The new way
-
 ```gradle
 plugins {
-  id "io.github.spencerpark.jupyter-kernel-installer" version "2.1.0"
+  id "io.github.spencerpark.jupyter-kernel-installer" version "3.0.0"
 }
 ```
 
