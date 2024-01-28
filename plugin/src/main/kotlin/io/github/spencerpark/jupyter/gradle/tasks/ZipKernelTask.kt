@@ -24,6 +24,8 @@
 
 package io.github.spencerpark.jupyter.gradle.tasks
 
+import io.github.spencerpark.jupyter.gradle.GENERATE_KERNEL_JSON_TASK_NAME
+import io.github.spencerpark.jupyter.gradle.GENERATE_PYTHON_INSTALLER_TASK_NAME
 import io.github.spencerpark.jupyter.gradle.KernelInstallSpec
 import io.github.spencerpark.jupyter.gradle.WithGradleDslExtensions
 import io.github.spencerpark.jupyter.gradle.installers.InstallerMethod
@@ -36,15 +38,6 @@ import org.gradle.api.tasks.options.Option
 
 @CacheableTask
 abstract class ZipKernelTask : Zip(), WithGradleDslExtensions {
-    companion object {
-        /**
-         * A placeholder identifier that is added into the kernel.json to be replaced when installed. The
-         * path to the kernel is not known until it is installed which is why this field needs to be
-         * deferred.
-         */
-        private const val UNSET_PATH_TOKEN = "@KERNEL_INSTALL_DIRECTORY@"
-    }
-
     /**
      * The properties of the kernel being installed. These will end up inside the generated kernel.json.
      */
@@ -63,7 +56,12 @@ abstract class ZipKernelTask : Zip(), WithGradleDslExtensions {
         // Kernel resources, executable, kernel.json go into a directory matching the kernel's name.
         super.with(project.copySpec { spec ->
             spec.into(kernelInstallSpec.kernelName) { intoKernelDir ->
-                intoKernelDir.from(project.tasks.withType(GenerateKernelJsonTask::class.java).first().output)
+                intoKernelDir.from(
+                    project.tasks.named(
+                        GENERATE_KERNEL_JSON_TASK_NAME,
+                        GenerateKernelJsonTask::class.java
+                    )
+                )
 
                 intoKernelDir.from(kernelInstallSpec.kernelResources)
                 intoKernelDir.from(kernelInstallSpec.kernelExecutable)
@@ -74,7 +72,10 @@ abstract class ZipKernelTask : Zip(), WithGradleDslExtensions {
         super.into("") { spec ->
             spec.from({
                 if (InstallerMethod.PYTHON_SCRIPT in installers) {
-                    return@from project.tasks.withType(GeneratePythonInstallerTask::class.java).first().output
+                    return@from project.tasks.named(
+                        GENERATE_PYTHON_INSTALLER_TASK_NAME,
+                        GeneratePythonInstallerTask::class.java
+                    )
                 }
 
                 return@from null
