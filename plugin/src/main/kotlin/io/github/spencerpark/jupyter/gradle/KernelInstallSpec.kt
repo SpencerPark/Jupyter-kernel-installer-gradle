@@ -51,6 +51,9 @@ abstract class KernelInstallSpec {
     @get:Input
     abstract val kernelEnv: MapProperty<String, String>
 
+    @get:Input
+    abstract val kernelMetadata: MapProperty<String, Any>
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val kernelExecutable: RegularFileProperty

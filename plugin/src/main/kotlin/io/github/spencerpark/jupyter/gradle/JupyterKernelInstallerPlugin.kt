@@ -54,6 +54,8 @@ class JupyterKernelInstallerPlugin : Plugin<Project> {
 
             installSpec.kernelEnv.convention(kernelExtension.kernelEnv)
 
+            installSpec.kernelMetadata.convention(kernelExtension.kernelMetadata)
+
             installSpec.kernelExecutable.convention(kernelExtension.kernelExecutable)
 
             installSpec.kernelResources.setFrom(kernelExtension.kernelResources)

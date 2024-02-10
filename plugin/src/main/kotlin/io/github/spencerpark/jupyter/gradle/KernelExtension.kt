@@ -39,14 +39,19 @@ import org.gradle.api.tasks.AbstractCopyTask
 import org.gradle.api.tasks.TaskProvider
 import javax.inject.Inject
 
-open class KernelExtension @Inject constructor(private val project: Project, objects: ObjectFactory) : WithGradleDslExtensions {
+open class KernelExtension @Inject constructor(private val project: Project, objects: ObjectFactory) :
+    WithGradleDslExtensions {
     val kernelName: Property<String> = objects.property(String::class.java).convention(project.name)
     val kernelDisplayName: Property<String> = objects.property(String::class.java).convention(kernelName)
     val kernelLanguage: Property<String> = objects.property(String::class.java).convention(kernelName)
 
     val kernelInterruptMode: Property<String> = objects.property(String::class.java).convention("message")
 
-    val kernelEnv: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
+    val kernelEnv: MapProperty<String, String> =
+        objects.mapProperty(String::class.java, String::class.java).convention(mutableMapOf())
+
+    val kernelMetadata: MapProperty<String, Any> =
+        objects.mapProperty(String::class.java, Any::class.java).convention(mutableMapOf())
 
     val kernelExecutable: RegularFileProperty = objects.fileProperty()
 
@@ -61,18 +66,24 @@ open class KernelExtension @Inject constructor(private val project: Project, obj
     fun kernelInterruptMode(kernelInterruptMode: String?) = this.kernelInterruptMode.set(kernelInterruptMode)
 
     fun kernelEnv(kernelEnv: Map<String, String>) = this.kernelEnv.putAll(kernelEnv)
-    fun kernelEnv(configure: Action<in MutableMap<String, String>>) = this.kernelEnv.set(this.kernelEnv.get().also(configure::execute))
+    fun kernelEnv(configure: Action<in MutableMap<String, String>>) =
+        this.kernelEnv.set(this.kernelEnv.get().also(configure::execute))
+
+    fun kernelMetadata(kernelMetadata: Map<String, Any>) = this.kernelMetadata.putAll(kernelMetadata)
+    fun kernelMetadata(configure: Action<in MutableMap<String, Any>>) =
+        this.kernelMetadata.set(this.kernelMetadata.get().also(configure::execute))
 
     fun kernelExecutable(kernelExecutable: RegularFile) = this.kernelExecutable.set(kernelExecutable)
     fun kernelExecutable(kernelExecutable: Any) = this.kernelExecutable.set(project.file(kernelExecutable))
     fun setKernelExecutable(kernelExecutable: RegularFile) = this.kernelExecutable.set(kernelExecutable)
 
     fun kernelResources(configure: Action<in CopySourceSpec>) {
-        val provider = project.tasks.named(STAGE_EXTRA_KERNEL_RESOURCES_TASK_NAME, AbstractCopyTask::class.java) { task ->
-            val spec = project.copySpec()
-            configure.execute(spec)
-            task.with(spec)
-        }
+        val provider =
+            project.tasks.named(STAGE_EXTRA_KERNEL_RESOURCES_TASK_NAME, AbstractCopyTask::class.java) { task ->
+                val spec = project.copySpec()
+                configure.execute(spec)
+                task.with(spec)
+            }
         kernelResources(provider)
     }
 

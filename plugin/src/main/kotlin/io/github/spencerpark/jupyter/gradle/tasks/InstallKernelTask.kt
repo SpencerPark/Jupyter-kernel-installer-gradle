@@ -332,7 +332,8 @@ abstract class InstallKernelTask @Inject constructor(private val execOps: ExecOp
                 kernelDisplayName.get(),
                 kernelLanguage.get(),
                 kernelInterruptMode.get(),
-                env
+                env,
+                kernelMetadata.get(),
             )
         }
     }

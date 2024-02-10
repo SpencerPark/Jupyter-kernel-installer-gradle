@@ -24,43 +24,74 @@
 
 package io.github.spencerpark.jupyter.gradle
 
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.gradle.api.file.RegularFile
 import org.gradle.api.tasks.Input
 import java.io.File
 
 private val json = Json { prettyPrint = true }
 
+private fun json(value: Any?): JsonElement {
+    return when (value) {
+        is JsonElement -> value
+        null -> JsonNull
+        is String -> JsonPrimitive(value)
+        is Number -> JsonPrimitive(value)
+        is Boolean -> JsonPrimitive(value)
+        is Map<*, *> -> JsonObject(value.entries.associate { it.key.toString() to json(it.value) })
+        is List<*> -> JsonArray(value.map { json(it) }.toList())
+        else -> throw IllegalArgumentException("Cannot encode json value: $value")
+    }
+}
+
 class KernelJson(
-        @Input val installedKernelJar: String,
-        @Input val kernelDisplayName: String,
-        @Input val kernelLanguage: String,
-        @Input val interruptMode: String,
-        @Input val kernelEnvironment: Map<String, String>
+    @Input val installedKernelJar: String,
+    @Input val kernelDisplayName: String,
+    @Input val kernelLanguage: String,
+    @Input val interruptMode: String,
+    @Input val kernelEnvironment: Map<String, String>,
+    @Input val kernelMetadata: Map<String, Any>,
 ) {
     private val compiledSpec: String = json.encodeToString(
-            JsonElement.serializer(),
-            JsonObject(mapOf(
-                    "argv" to JsonArray(listOf("java", "-jar", installedKernelJar, "{connection_file}").map(::JsonPrimitive)),
-                    "display_name" to JsonPrimitive(kernelDisplayName),
-                    "language" to JsonPrimitive(kernelLanguage),
-                    "interrupt_mode" to JsonPrimitive(interruptMode),
-                    "env" to JsonObject(kernelEnvironment.mapValues { JsonPrimitive(it.value) })
-            ))
+        JsonElement.serializer(),
+        JsonObject(
+            mapOf(
+                "argv" to JsonArray(
+                    listOf(
+                        "java",
+                        "-jar",
+                        installedKernelJar,
+                        "{connection_file}"
+                    ).map(::JsonPrimitive)
+                ),
+                "display_name" to JsonPrimitive(kernelDisplayName),
+                "language" to JsonPrimitive(kernelLanguage),
+                "interrupt_mode" to JsonPrimitive(interruptMode),
+                "env" to JsonObject(kernelEnvironment.mapValues { JsonPrimitive(it.value) }),
+                "metadata" to json(kernelMetadata),
+            )
+        )
     )
 
     constructor(
-            installedKernelJar: RegularFile,
-            kernelDisplayName: String,
-            kernelLanguage: String,
-            interruptMode: String,
-            kernelEnvironment: Map<String, String>
+        installedKernelJar: RegularFile,
+        kernelDisplayName: String,
+        kernelLanguage: String,
+        interruptMode: String,
+        kernelEnvironment: Map<String, String>,
+        kernelMetadata: Map<String, Any>,
     ) : this(
-            installedKernelJar.asFile.absolutePath.toString().replace(File.separatorChar, '/'),
-            kernelDisplayName,
-            kernelLanguage,
-            interruptMode,
-            kernelEnvironment
+        installedKernelJar.asFile.absolutePath.toString().replace(File.separatorChar, '/'),
+        kernelDisplayName,
+        kernelLanguage,
+        interruptMode,
+        kernelEnvironment,
+        kernelMetadata
     )
 
     override fun toString() = compiledSpec
