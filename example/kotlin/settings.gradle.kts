@@ -1,3 +1,5 @@
-rootProject.name = "kotlin-dsl-example"
+pluginManagement {
+    includeBuild("../../plugin")
+}
 
-includeBuild("../../")
+rootProject.name = "kotlin-dsl-example"

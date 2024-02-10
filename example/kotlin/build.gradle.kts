@@ -1,15 +1,10 @@
-import org.gradle.api.tasks.wrapper.Wrapper
-import io.github.spencerpark.jupyter.gradle.InstallKernelTask
-import io.github.spencerpark.jupyter.gradle.ZipKernelTask
+import io.github.spencerpark.jupyter.gradle.tasks.GenerateKernelJsonTask
+import io.github.spencerpark.jupyter.gradle.tasks.InstallKernelTask
+import io.github.spencerpark.jupyter.gradle.tasks.ZipKernelTask
 
 plugins {
     id("java")
     id("io.github.spencerpark.jupyter-kernel-installer")
-}
-
-tasks.named<Wrapper>("wrapper") {
-    gradleVersion = "6.0"
-    distributionType = Wrapper.DistributionType.ALL
 }
 
 jupyter {
@@ -21,10 +16,11 @@ jupyter {
     kernelEnv["IN_JUPYTER_KERNEL"] = "1"
 
     kernelResources {
-        from("kernel") // This is the default
+        from("kernel") // This is the default if `kernelResources` is not specified
 
         from(files("example-resource.txt", "example-excluded-resource.txt")) {
             exclude("example-excluded-resource.txt")
+            into("extras")
         }
     }
 
@@ -69,12 +65,18 @@ jupyter {
     }
 }
 
+tasks.named<GenerateKernelJsonTask>("generateKernelJson") {
+    kernelInstallSpec.kernelDisplayName by "${kernelInstallSpec.kernelDisplayName.get()} Renamed Slightly"
+}
+
 tasks.named<InstallKernelTask>("installKernel") {
-    kernelInstallPath by provider(commandLineSpecifiedPath(userInstallPath))
+    kernelInstallPath by commandLineSpecifiedPathOr(
+        project.layout.buildDirectory.dir("jupyter/mock-install")
+    )
 }
 
 tasks.named<ZipKernelTask>("zipKernel") {
     withInstaller("python")
 
-    archiveBaseName.set("kotlin-dsl-example-kernel-dist")
+    archiveBaseName = "kotlin-dsl-example-kernel-dist"
 }
