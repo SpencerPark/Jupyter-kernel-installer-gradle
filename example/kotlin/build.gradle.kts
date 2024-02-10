@@ -15,6 +15,8 @@ jupyter {
 
     kernelEnv["IN_JUPYTER_KERNEL"] = "1"
 
+    kernelMetadata["debugger"] = true
+
     kernelResources {
         from("kernel") // This is the default if `kernelResources` is not specified
 

@@ -67,11 +67,12 @@ abstract class GenerateKernelJsonTask : DefaultTask(), WithGradleDslExtensions {
     fun execute() {
         val spec = with(kernelInstallSpec) {
             KernelJson(
-                    "${UNSET_PATH_TOKEN}/${kernelExecutable.get().asFile.name}",
-                    kernelDisplayName.get(),
-                    kernelLanguage.get(),
-                    kernelInterruptMode.get(),
-                    kernelEnv.get()
+                "${UNSET_PATH_TOKEN}/${kernelExecutable.get().asFile.name}",
+                kernelDisplayName.get(),
+                kernelLanguage.get(),
+                kernelInterruptMode.get(),
+                kernelEnv.get(),
+                kernelMetadata.get(),
             )
         }
         output.get().asFile.writeText(spec.toString(), Charsets.UTF_8)

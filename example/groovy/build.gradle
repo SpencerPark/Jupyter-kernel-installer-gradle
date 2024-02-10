@@ -13,6 +13,8 @@ jupyter {
     kernelEnv IN_JUPYTER_KERNEL: '1'
     kernelEnv['KERNEL_VERSION'] = project.version
 
+    kernelMetadata['debugger'] = true
+
     kernelResources {
         from 'kernel' // This is the default
 
